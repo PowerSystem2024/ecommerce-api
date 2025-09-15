@@ -1,0 +1,2 @@
+// Archivo removido - ya no se usa winston
+// Si necesitas logs en el futuro, usa console.log() directamente

@@ -1,0 +1,30 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import connectDB from './config/db.js';
+import routes from './routes/index.js';
+import errorHandler from './middlewares/errorHandler.js';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Conectar a la base de datos
+connectDB();
+
+// Middlewares
+app.use(cors()); // CORS
+app.use(express.json()); // Parse JSON
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded
+
+// Routes
+app.use('/api', routes);
+
+// Error handler middleware
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+});
