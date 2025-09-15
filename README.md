@@ -7,7 +7,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/)
 [![JWT](https://img.shields.io/badge/Auth-JWT-orange.svg)](https://jwt.io/)
 
-## Características
+## Características 
 
 - **Arquitectura en Capas** con patrón Repository
 - **Autenticación JWT** con encriptación bcrypt
