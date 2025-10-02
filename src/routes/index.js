@@ -1,4 +1,5 @@
 import express from 'express';
+import authRoutes from './authRoutes.js';
 import productRoutes from './productRoutes.js';
 import userRoutes from './userRoutes.js';
 import orderRoutes from './orderRoutes.js';
@@ -6,6 +7,7 @@ import orderRoutes from './orderRoutes.js';
 const router = express.Router();
 
 // API Routes
+router.use('/auth', authRoutes);      // Rutas de autenticación
 router.use('/products', productRoutes);
 router.use('/users', userRoutes);
 router.use('/orders', orderRoutes);

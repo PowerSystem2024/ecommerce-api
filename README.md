@@ -69,7 +69,7 @@ Request → Middlewares → Controllers → Services → Repositories → MongoD
 
 ### Registro de Usuario
 ```json
-POST /api/users/register
+POST /api/auth/register
 {
   "name": "Juan Pérez",
   "email": "juan@email.com",
@@ -77,18 +77,54 @@ POST /api/users/register
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Usuario registrado exitosamente",
+  "data": {
+    "user": { ... },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
 ### Login
 ```json
-POST /api/users/login
+POST /api/auth/login
 {
   "email": "juan@email.com",
   "password": "mipassword123"
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login exitoso",
+  "data": {
+    "user": { ... },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
 ### Usar Token en Headers
 ```http
-Authorization: Bearer ...
+Authorization: Bearer {tu_token_aqui}
+```
+
+### Rutas Protegidas
+```http
+GET /api/users/profile
+PUT /api/users/profile
+GET /api/users
+```
+
+**Todas requieren header:**
+```http
+Authorization: Bearer {token}
 ```
 
 ## Instalación y Configuración

@@ -10,7 +10,7 @@ class UserRepository {
   }
 
   async findByEmail(email) {
-    return await User.findOne({ email });
+    return await User.findOne({ email }).select('-password');
   }
 
   async findAll() {
