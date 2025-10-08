@@ -10,7 +10,27 @@ class ProductRepository {
   }
 
   async findAll(filters = {}) {
-    return await Product.find(filters);
+    const query = { isActive: true }; // Solo productos activos por defecto
+    
+    if (filters.category) {
+      query.category = filters.category;
+    }
+    
+    if (filters.name) {
+      query.name = { $regex: filters.name, $options: 'i' }; // Búsqueda case-insensitive
+    }
+    
+    if (filters.minPrice || filters.maxPrice) {
+      query.price = {};
+      if (filters.minPrice) {
+        query.price.$gte = filters.minPrice;
+      }
+      if (filters.maxPrice) {
+        query.price.$lte = filters.maxPrice;
+      }
+    }
+    
+    return await Product.find(query);
   }
 
   async update(id, updateData) {
@@ -23,6 +43,10 @@ class ProductRepository {
 
   async findByCategory(category) {
     return await Product.find({ category, isActive: true });
+  }
+
+  async findAllCategories() {
+    return await Category.find({ isActive: true }).select('name');
   }
 
   async updateStock(id, quantity) {
