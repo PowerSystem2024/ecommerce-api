@@ -19,6 +19,7 @@ class ProductService {
   }
 
   async getAllProducts(filters = {}) {
+    // Validar y sanitizar filtros aquí si es necesario
     return await productRepo.findAll(filters);
   }
 
