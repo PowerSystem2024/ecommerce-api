@@ -10,7 +10,16 @@ class UserService {
       throw new Error('El usuario ya existe');
     }
 
-    return await userRepo.create(userData);
+    // Crear usuario (password se encripta automáticamente en el modelo)
+    const user = await userRepo.create(userData);
+    
+    // Generar token JWT para el nuevo usuario
+    const token = this.generateToken(user._id);
+    
+    return { 
+      user: { ...user.toObject(), password: undefined }, 
+      token 
+    };
   }
 
   async loginUser(email, password) {
