@@ -33,8 +33,33 @@ class ProductService {
     return await productRepo.delete(id);
   }
 
-  async getProductsByCategory(category) {
-    return await productRepo.findByCategory(category);
+  async getProductsByCategory(categoryId) {
+    return await productRepo.findByCategory(categoryId);
+  }
+
+  async getProductsWithFilters(filters = {}) {
+    const { category, minPrice, maxPrice, inStock, sortBy = 'name', sortOrder = 'asc', page = 1, limit = 10 } = filters;
+    
+    const query = { isActive: true };
+    
+    // Filtro por categoría
+    if (category) {
+      query.category = category;
+    }
+    
+    // Filtro por precio
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = minPrice;
+      if (maxPrice) query.price.$lte = maxPrice;
+    }
+    
+    // Filtro por stock
+    if (inStock === 'true') {
+      query.stock = { $gt: 0 };
+    }
+    
+    return await productRepo.findWithFilters(query, { sortBy, sortOrder, page, limit });
   }
 
   async checkStock(id, quantity) {

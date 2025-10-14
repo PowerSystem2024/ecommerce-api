@@ -63,4 +63,27 @@ const auth = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware para verificar si el usuario es administrador
+ */
+const isAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Usuario no autenticado'
+    });
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Se requieren permisos de administrador'
+    });
+  }
+
+  next();
+};
+
+// Exportar funciones con nombres específicos
+export { auth as authenticateToken, isAdmin };
 export default auth;
