@@ -28,6 +28,20 @@ class UserRepository {
   async findByEmailWithPassword(email) {
     return await User.findOne({ email }).select('+password');
   }
+
+  async findByResetToken(hashedToken) {
+    return await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+  }
+
+  async findByEmailVerificationToken(hashedToken) {
+    return await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() }
+    });
+  }
 }
 
 export default new UserRepository();
