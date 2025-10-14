@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 
 class ProductRepository {
   async create(productData) {
@@ -31,6 +32,31 @@ class ProductRepository {
     }
     
     return await Product.find(query);
+  }
+
+  // Búsqueda con paginación, orden y filtros avanzados
+  async findWithFilters(query = {}, options = {}) {
+    const { sortBy = 'name', sortOrder = 'asc', page = 1, limit = 10 } = options;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    const products = await Product.find(query)
+      .populate('category', 'name description')
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Product.countDocuments(query);
+
+    return {
+      products,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalProducts: total
+      }
+    };
   }
 
   async update(id, updateData) {
