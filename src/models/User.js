@@ -73,4 +73,9 @@ userSchema.methods.createEmailVerificationToken = function() {
   return verificationToken;
 };
 
+// Método para verificar contraseña
+userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
 export default mongoose.model('User', userSchema);

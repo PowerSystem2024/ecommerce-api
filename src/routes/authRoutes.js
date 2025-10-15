@@ -28,4 +28,7 @@ router.get('/verify-email/:token', authController.verifyEmail);
 // POST /api/auth/resend-verification - Reenviar correo de verificación
 router.post('/resend-verification', authController.resendVerificationEmail);
 
+// GET /api/auth/test-email - Probar conexión de email (desarrollo)
+router.get('/test-email', authController.testEmail);
+
 export default router;
