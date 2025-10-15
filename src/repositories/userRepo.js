@@ -25,6 +25,10 @@ class UserRepository {
     return await User.findByIdAndDelete(id);
   }
 
+  async findByIdWithPassword(id) {
+    return await User.findById(id).select('+password');
+  }
+
   async findByEmailWithPassword(email) {
     return await User.findOne({ email }).select('+password');
   }

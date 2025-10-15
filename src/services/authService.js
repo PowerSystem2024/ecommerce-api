@@ -331,6 +331,51 @@ class AuthService {
       );
     }
   }
+
+  // Cambiar contraseña (usuario autenticado)
+  async changePassword(userId, currentPassword, newPassword, passwordConfirm) {
+    // 1) Verificar que las nuevas contraseñas coincidan
+    if (newPassword !== passwordConfirm) {
+      throw new AppError('Las nuevas contraseñas no coinciden', 400);
+    }
+
+    // 2) Encontrar usuario con contraseña
+    const user = await userRepo.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    // 3) Verificar contraseña actual
+    if (!(await user.correctPassword(currentPassword, user.password))) {
+      throw new AppError('La contraseña actual es incorrecta', 401);
+    }
+
+    // 4) Verificar que la nueva contraseña sea diferente
+    if (await user.correctPassword(newPassword, user.password)) {
+      throw new AppError('La nueva contraseña debe ser diferente a la actual', 400);
+    }
+
+    // 5) Actualizar contraseña
+    user.password = newPassword;
+    await user.save();
+
+    // 6) Generar nuevo token JWT
+    const token = this.signToken(user._id);
+
+    return {
+      token,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive
+        }
+      }
+    };
+  }
 }
 
 export default new AuthService();
