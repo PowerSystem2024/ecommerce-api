@@ -23,7 +23,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Verificar que el usuario existe y está activo
-    const user = await userService.getUserById(decoded.userId);
+    const user = await userService.getUserById(decoded.id);
     
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -34,7 +34,7 @@ const auth = async (req, res, next) => {
 
     // Adjuntar información del usuario al request
     req.user = {
-      userId: decoded.userId,
+      userId: decoded.id,
       email: user.email,
       role: user.role
     };
