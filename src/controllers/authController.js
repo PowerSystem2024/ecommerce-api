@@ -56,7 +56,7 @@ const authController = {
       // Crear cookie segura
       res.cookie('jwt', result.token, {
         expires: new Date(
-          Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+          Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 7) * 24 * 60 * 60 * 1000
         ),
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production'
@@ -210,6 +210,33 @@ const authController = {
         status: 'success',
         message: result.message
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+  /**
+   * @desc    Probar conexión de email (para desarrollo)
+   * @route   GET /api/auth/test-email
+   * @access  Public
+   */
+  async testEmail(req, res, next) {
+    try {
+      const { testEmailConnection } = await import('../utils/emailService.js');
+      const isConnected = await testEmailConnection();
+
+      if (isConnected) {
+        res.status(200).json({
+          status: 'success',
+          message: 'Conexión de email funcionando correctamente',
+          data: { connected: true }
+        });
+      } else {
+        res.status(400).json({
+          status: 'error',
+          message: 'Error en conexión de email',
+          data: { connected: false }
+        });
+      }
     } catch (error) {
       next(error);
     }
