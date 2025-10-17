@@ -23,7 +23,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Verificar que el usuario existe y está activo
-    const user = await userService.getUserById(decoded.userId);
+    const user = await userService.getUserById(decoded.id);
     
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -34,7 +34,7 @@ const auth = async (req, res, next) => {
 
     // Adjuntar información del usuario al request
     req.user = {
-      userId: decoded.userId,
+      userId: decoded.id,
       email: user.email,
       role: user.role
     };
@@ -63,4 +63,27 @@ const auth = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware para verificar si el usuario es administrador
+ */
+const isAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Usuario no autenticado'
+    });
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Se requieren permisos de administrador'
+    });
+  }
+
+  next();
+};
+
+// Exportar funciones con nombres específicos
+export { auth as authenticateToken, isAdmin };
 export default auth;

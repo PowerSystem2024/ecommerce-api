@@ -37,6 +37,17 @@ const validators = {
       zipCode: Joi.string().required(),
       country: Joi.string().required()
     }).required()
+  }),
+
+  // Category validation schemas
+  createCategory: Joi.object({
+    name: Joi.string().min(2).max(50).required(),
+    description: Joi.string().max(200).optional()
+  }),
+
+  updateCategory: Joi.object({
+    name: Joi.string().min(2).max(50).optional(),
+    description: Joi.string().max(200).optional()
   })
 };
 
