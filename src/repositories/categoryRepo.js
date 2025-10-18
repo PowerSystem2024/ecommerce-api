@@ -1,4 +1,4 @@
-import Category from '../models/Category.js';
+ import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 
 class CategoryRepository {

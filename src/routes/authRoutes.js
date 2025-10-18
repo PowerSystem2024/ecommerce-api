@@ -1,6 +1,7 @@
 import express from 'express';
 import authController from '../controllers/authController.js';
 import { validators, validate } from '../utils/validator.js';
+import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -27,5 +28,11 @@ router.get('/verify-email/:token', authController.verifyEmail);
 
 // POST /api/auth/resend-verification - Reenviar correo de verificación
 router.post('/resend-verification', authController.resendVerificationEmail);
+
+// GET /api/auth/me - Obtener información del usuario autenticado
+router.get('/me', authenticateToken, authController.getMe);
+
+// PATCH /api/auth/change-password - Cambiar contraseña (usuario autenticado)
+router.patch('/change-password', authenticateToken, authController.changePassword);
 
 export default router;

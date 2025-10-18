@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import User from '../models/User.js';
 import userRepo from '../repositories/userRepo.js';
 import { sendEmail } from '../utils/emailService.js';
 import { AppError } from '../utils/errorHandler.js';
@@ -52,18 +53,27 @@ class AuthService {
     }
 
     // 2) Crear usuario
-    const newUser = await userRepo.create({
+    const newUser = new User({
       name: userData.name,
       email: userData.email,
       password: userData.password,
       passwordConfirm: userData.passwordConfirm
     });
 
-    // 3) Generar token de verificación de email
+    // 3) Generar token de verificación de email ANTES de guardar
     const verificationToken = newUser.createEmailVerificationToken();
-    await newUser.save({ validateBeforeSave: false });
 
-    // 4) Enviar email de verificación
+    // 4) Crear usuario en la BD (con el token ya generado)
+    await userRepo.create({
+      name: newUser.name,
+      email: newUser.email,
+      password: newUser.password,
+      passwordConfirm: newUser.passwordConfirm,
+      emailVerificationToken: newUser.emailVerificationToken,
+      emailVerificationExpires: newUser.emailVerificationExpires
+    });
+
+    // 5) Enviar email de verificación
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
@@ -77,10 +87,8 @@ class AuthService {
         }
       });
     } catch (error) {
-      // Si falla el envío del correo, eliminar el token
-      newUser.emailVerificationToken = undefined;
-      newUser.emailVerificationExpires = undefined;
-      await newUser.save({ validateBeforeSave: false });
+      // Si falla el envío del correo, eliminar el usuario creado
+      await User.findOneAndDelete({ email: newUser.email });
 
       throw new AppError(
         'Hubo un error al enviar el correo de verificación. Por favor, inténtalo de nuevo más tarde.',
@@ -287,9 +295,14 @@ class AuthService {
 
     // 3) Crear nuevo token
     const verificationToken = user.createEmailVerificationToken();
-    await user.save({ validateBeforeSave: false });
 
-    // 4) Enviar email
+    // 4) Actualizar usuario en la BD con el nuevo token
+    await userRepo.update(user._id, {
+      emailVerificationToken: user.emailVerificationToken,
+      emailVerificationExpires: user.emailVerificationExpires
+    });
+
+    // 5) Enviar email
     try {
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
@@ -308,15 +321,61 @@ class AuthService {
       };
     } catch (error) {
       // Si falla el envío del correo, eliminar el token
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpires = undefined;
-      await user.save({ validateBeforeSave: false });
+      await userRepo.update(user._id, {
+        emailVerificationToken: undefined,
+        emailVerificationExpires: undefined
+      });
 
       throw new AppError(
         'Hubo un error al enviar el correo de verificación. Por favor, inténtalo de nuevo más tarde.',
         500
       );
     }
+  }
+
+  // Cambiar contraseña (usuario autenticado)
+  async changePassword(userId, currentPassword, newPassword, passwordConfirm) {
+    // 1) Verificar que las nuevas contraseñas coincidan
+    if (newPassword !== passwordConfirm) {
+      throw new AppError('Las nuevas contraseñas no coinciden', 400);
+    }
+
+    // 2) Encontrar usuario con contraseña
+    const user = await userRepo.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    // 3) Verificar contraseña actual
+    if (!(await user.correctPassword(currentPassword, user.password))) {
+      throw new AppError('La contraseña actual es incorrecta', 401);
+    }
+
+    // 4) Verificar que la nueva contraseña sea diferente
+    if (await user.correctPassword(newPassword, user.password)) {
+      throw new AppError('La nueva contraseña debe ser diferente a la actual', 400);
+    }
+
+    // 5) Actualizar contraseña
+    user.password = newPassword;
+    await user.save();
+
+    // 6) Generar nuevo token JWT
+    const token = this.signToken(user._id);
+
+    return {
+      token,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive
+        }
+      }
+    };
   }
 }
 

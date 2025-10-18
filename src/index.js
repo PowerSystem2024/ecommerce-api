@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
+
+// ✅ Cargar variables de entorno PRIMERO, antes de cualquier import
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import routes from './routes/index.js';
 import errorHandler from './middlewares/errorHandler.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,5 +28,5 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+  // Server started successfully
 });

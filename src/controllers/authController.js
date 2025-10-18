@@ -214,6 +214,77 @@ const authController = {
     } catch (error) {
       next(error);
     }
+  },
+  /**
+   * @desc    Probar conexión de email (para desarrollo)
+   * @route   GET /api/auth/test-email
+   * @access  Public
+   */
+  async testEmail(req, res, next) {
+    try {
+      const { testEmailConnection } = await import('../utils/emailService.js');
+      const isConnected = await testEmailConnection();
+
+      if (isConnected) {
+        res.status(200).json({
+          status: 'success',
+          message: 'Conexión de email funcionando correctamente',
+          data: { connected: true }
+        });
+      } else {
+        res.status(400).json({
+          status: 'error',
+          message: 'Error en conexión de email',
+          data: { connected: false }
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Obtener información del usuario autenticado
+   * GET /api/auth/me
+   */
+  getMe(req, res, next) {
+    try {
+      // El usuario ya viene del middleware de autenticación
+      const user = req.user;
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          user
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+  async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword, passwordConfirm } = req.body;
+      const userId = req.user.userId; // Obtenido del middleware de autenticación
+
+      if (!currentPassword || !newPassword || !passwordConfirm) {
+        throw new AppError('Por favor, proporciona todas las contraseñas requeridas', 400);
+      }
+
+      const result = await authService.changePassword(userId, currentPassword, newPassword, passwordConfirm);
+
+      // Iniciar sesión al usuario con el nuevo token
+      res.status(200).json({
+        status: 'success',
+        message: 'Contraseña actualizada correctamente',
+        token: result.token,
+        data: {
+          user: result.data.user
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

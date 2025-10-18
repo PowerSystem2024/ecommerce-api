@@ -3,7 +3,7 @@ import authRoutes from './authRoutes.js';
 import productRoutes from './productRoutes.js';
 import userRoutes from './userRoutes.js';
 import orderRoutes from './orderRoutes.js';
-import categoryRoutes from './categoryRoutes.js';
+import reviewRoutes from './reviewRoutes.js';
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.use('/auth', authRoutes);      // Rutas de autenticación
 router.use('/products', productRoutes);
 router.use('/users', userRoutes);
 router.use('/orders', orderRoutes);
-router.use('/categories', categoryRoutes);
+router.use('/reviews', reviewRoutes); // Rutas de valoraciones y reseñas
 
 // Health check
 router.get('/health', (req, res) => {
