@@ -5,7 +5,12 @@ class CategoryService {
   // Obtener todas las categorías
   async getAllCategories() {
     try {
-      const categories = await Category.find({ isActive: true })
+      const categories = await Category.find({
+        $or: [
+          { isActive: { $exists: false } },
+          { isActive: true }
+        ]
+      })
         .sort({ name: 1 });
       
       return {
@@ -53,7 +58,8 @@ class CategoryService {
 
       const newCategory = new Category({
         name: name.trim(),
-        description: description?.trim() || ''
+        description: description?.trim() || '',
+        isActive: true
       });
 
       const savedCategory = await newCategory.save();

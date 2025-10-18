@@ -1,4 +1,5 @@
 import userService from '../services/userService.js';
+import { AppError } from '../utils/errorHandler.js';
 
 /**
  * Controller para operaciones de usuarios (NO autenticación)
@@ -44,6 +45,31 @@ const userController = {
       });
     } catch (error) {
       res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  async promoteToAdmin(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await userService.getUserById(id);
+      if (!user) {
+        throw new AppError('Usuario no encontrado', 404);
+      }
+
+      // Actualizar rol a admin
+      user.role = 'admin';
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Usuario promovido a admin exitosamente',
+        data: { userId: id, newRole: 'admin' }
+      });
+    } catch (error) {
+      res.status(error.statusCode || 500).json({
         success: false,
         message: error.message
       });
