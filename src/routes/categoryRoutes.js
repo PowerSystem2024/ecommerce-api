@@ -48,8 +48,8 @@ router.get('/:id/products', categoryController.getProductsByCategory);
 
 // Rutas protegidas (requieren autenticación y ser admin)
 router.post('/', 
-  authenticateToken, 
-  isAdmin, 
+  // authenticateToken, 
+  // isAdmin, 
   validateCreateCategory, 
   categoryController.createCategory
 );

@@ -54,9 +54,10 @@ const authController = {
       const result = await authService.login(req.body.email, req.body.password);
 
       // Crear cookie segura
+      const cookieExpiresIn = process.env.JWT_COOKIE_EXPIRES_IN || 7; // Default: 7 días
       res.cookie('jwt', result.token, {
         expires: new Date(
-          Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+          Date.now() + cookieExpiresIn * 24 * 60 * 60 * 1000
         ),
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production'

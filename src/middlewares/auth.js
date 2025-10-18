@@ -9,7 +9,7 @@ const auth = async (req, res, next) => {
   try {
     // Extraer token del header Authorization
     const authHeader = req.header('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
@@ -21,10 +21,10 @@ const auth = async (req, res, next) => {
 
     // Verificar y decodificar token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Verificar que el usuario existe y está activo
-    const user = await userService.getUserById(decoded.userId);
-    
+    const user = await userService.getUserById(decoded.id);
+
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
@@ -34,11 +34,11 @@ const auth = async (req, res, next) => {
 
     // Adjuntar información del usuario al request
     req.user = {
-      userId: decoded.userId,
+      userId: decoded.id,
       email: user.email,
       role: user.role
     };
-    
+
     next();
   } catch (error) {
     // Manejo específico de errores JWT
@@ -48,7 +48,7 @@ const auth = async (req, res, next) => {
         message: 'Token inválido'
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
