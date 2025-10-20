@@ -1,5 +1,6 @@
 import express from 'express';
 import productController from '../controllers/productCtrl.js';
+import reviewController from '../controllers/reviewCtrl.js';
 import { authenticateToken, isAdmin } from '../middlewares/auth.js';
 import { validate, validators } from '../utils/validator.js';
 
@@ -10,6 +11,7 @@ router.post('/', authenticateToken, isAdmin, validate(validators.createProduct),
 router.put('/:id', authenticateToken, isAdmin, validate(validators.createProduct), productController.updateProduct);
 
 router.get('/', productController.getProducts);
+router.get('/:productId/reviews', reviewController.getReviewsByProduct);
 router.get('/:id', productController.getProduct);
 router.delete('/:id', authenticateToken, isAdmin, productController.deleteProduct);
 
