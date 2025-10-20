@@ -59,6 +59,7 @@ const validators = {
   }),
 
   updateCartItem: Joi.object({
+    productId: Joi.string().required(),
     quantity: Joi.number().integer().min(0).required()
   }),
 
