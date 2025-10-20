@@ -34,7 +34,8 @@ const cartController = {
 
   async updateItemQuantity(req, res) {
     try {
-      const { productId } = req.params;
+      // Support both routes: /items/:productId or /update with productId in body
+      const productId = req.params.productId || req.body.productId;
       const { quantity } = req.body;
       const cart = await cartService.updateItemQuantity(req.user.userId, productId, quantity);
       res.json({

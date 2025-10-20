@@ -8,7 +8,28 @@ class CartService {
       // Crear carrito vacío si no existe
       return await cartRepo.create({ user: userId, items: [] });
     }
-    return cart;
+    // Calcular subtotales por item y totalAmount (asegurarnos que siempre esté actualizado al devolverlo)
+    let total = 0;
+    const itemsWithSubtotal = [];
+    for (const item of cart.items) {
+      // item.product puede venir poblado gracias al repo
+      const product = item.product;
+      const price = product && product.price ? product.price : 0;
+      const subtotal = price * item.quantity;
+      itemsWithSubtotal.push({
+        product,
+        quantity: item.quantity,
+        subtotal
+      });
+      total += subtotal;
+    }
+
+    // Asegurar que el total en la entidad coincida (no forzamos persistencia aquí)
+    cart.totalAmount = total;
+    const cartObj = cart.toObject ? cart.toObject() : cart;
+    cartObj.items = itemsWithSubtotal;
+    cartObj.totalAmount = total;
+    return cartObj;
   }
 
   async addToCart(userId, productId, quantity = 1) {
@@ -23,7 +44,9 @@ class CartService {
       throw new Error('Stock insuficiente');
     }
 
-    return await cartRepo.addItem(userId, productId, quantity);
+    const cart = await cartRepo.addItem(userId, productId, quantity);
+    // devolver formato con subtotales
+    return await this.getCart(userId);
   }
 
   async updateItemQuantity(userId, productId, quantity) {
@@ -31,11 +54,21 @@ class CartService {
       throw new Error('La cantidad no puede ser negativa');
     }
 
-    return await cartRepo.updateItemQuantity(userId, productId, quantity);
+    // Verificar stock si la cantidad es mayor que 0
+    if (quantity > 0) {
+      const product = await productService.getProductById(productId);
+      if (product.stock < quantity) {
+        throw new Error('Stock insuficiente');
+      }
+    }
+
+    await cartRepo.updateItemQuantity(userId, productId, quantity);
+    return await this.getCart(userId);
   }
 
   async removeFromCart(userId, productId) {
-    return await cartRepo.removeItem(userId, productId);
+    await cartRepo.removeItem(userId, productId);
+    return await this.getCart(userId);
   }
 
   async clearCart(userId) {
