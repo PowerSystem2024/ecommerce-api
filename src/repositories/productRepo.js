@@ -64,7 +64,11 @@ class ProductRepository {
   }
 
   async delete(id) {
-    return await Product.findByIdAndDelete(id);
+    return await Product.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
   }
 
   async findByCategory(category) {
