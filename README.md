@@ -16,6 +16,9 @@
 - **Integración MercadoPago** para pagos
 - **MongoDB Atlas** como base de datos
 - **API RESTful** con endpoints completos
+- **Flujo completo de compra** con carrito y órdenes
+- **Seguimiento de estados** de órdenes
+- **Gestión automática de stock**
 
 ## Arquitectura del Proyecto
 
@@ -175,11 +178,36 @@ npm start
 - **Variables de entorno** para datos sensibles
 
 
+## Flujo de Compra Completo
+
+El sistema incluye un flujo completo de compra desde el carrito hasta la entrega:
+
+### 🛒 Carrito de Compras
+- Agregar/remover productos
+- Actualizar cantidades
+- Validación de stock
+- Cálculo automático de totales
+
+### 📋 Órdenes
+- Crear orden desde carrito
+- Estados: pendiente → confirmada → enviada → entregada
+- Seguimiento completo
+- Historial de compras
+
+### 📦 Gestión de Stock
+- Validación automática de stock
+- Actualización al crear órdenes
+- Prevención de sobreventa
+
+**Ver documentación completa:** [FLUJO_COMPRA.md](./FLUJO_COMPRA.md)
+
 ## Próximos Pasos
 
+- [x] Flujo completo de compra implementado
+- [x] Sistema de carrito y órdenes
+- [x] Seguimiento de estados
 - [ ] Agregar documentación Swagger
 - [ ] Deploy a producción
-- [ ] Integración completa MercadoPago
 - [ ] Sistema de notificaciones
 
 ## Contribución

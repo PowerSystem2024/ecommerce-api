@@ -39,6 +39,29 @@ const validators = {
     }).required()
   }),
 
+  createOrderFromCart: Joi.object({
+    shippingAddress: Joi.object({
+      street: Joi.string().required(),
+      city: Joi.string().required(),
+      zipCode: Joi.string().required(),
+      country: Joi.string().required()
+    }).required()
+  }),
+
+  updateOrderStatus: Joi.object({
+    status: Joi.string().valid('pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada').required()
+  }),
+
+  // Cart validation schemas
+  addToCart: Joi.object({
+    productId: Joi.string().required(),
+    quantity: Joi.number().integer().positive().default(1)
+  }),
+
+  updateCartItem: Joi.object({
+    quantity: Joi.number().integer().min(0).required()
+  }),
+
   // Category validation schemas
   createCategory: Joi.object({
     name: Joi.string().min(2).max(50).required(),
