@@ -121,6 +121,17 @@ class ProductService {
     const product = await this.getProductById(id);
     return product.stock >= quantity;
   }
+
+  async updateStock(id, quantityChange) {
+    const product = await this.getProductById(id);
+    const newStock = product.stock + quantityChange;
+    
+    if (newStock < 0) {
+      throw new Error('No se puede reducir el stock por debajo de 0');
+    }
+    
+    return await productRepo.updateStock(id, newStock);
+  }
 }
 
 export default new ProductService();

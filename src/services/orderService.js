@@ -1,5 +1,6 @@
 import orderRepo from '../repositories/orderRepo.js';
 import productService from './productService.js';
+import cartService from './cartService.js';
 import { preference } from '../config/mercadoPago.js';
 
 class OrderService {
@@ -27,6 +28,24 @@ class OrderService {
       shippingAddress: orderData.shippingAddress
     });
 
+    // Restar stock de productos
+    for (const item of orderData.products) {
+      await productService.updateStock(item.product, -item.quantity);
+    }
+
+    return order;
+  }
+
+  async createOrderFromCart(userId, shippingAddress) {
+    // Obtener datos del carrito
+    const orderData = await cartService.createOrderFromCart(userId, shippingAddress);
+    
+    // Crear la orden
+    const order = await this.createOrder(userId, orderData);
+    
+    // Vaciar el carrito después de crear la orden
+    await cartService.clearCart(userId);
+    
     return order;
   }
 
@@ -40,6 +59,10 @@ class OrderService {
 
   async getUserOrders(userId) {
     return await orderRepo.findByUserId(userId);
+  }
+
+  async getAllOrders() {
+    return await orderRepo.findAll();
   }
 
   async updateOrderStatus(id, status) {
