@@ -85,6 +85,11 @@ class ProductService {
 
   async deleteProduct(id) {
     const product = await this.getProductById(id);
+
+    if (!product.isActive) {
+      throw new Error('El producto ya se encuentra inactivo');
+    }
+
     return await productRepo.delete(id);
   }
 
