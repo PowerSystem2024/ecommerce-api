@@ -9,24 +9,33 @@ class ReviewRepository {
     return await Review.findById(id).populate('user', 'name email').populate('product', 'name');
   }
 
-  async findAll(filters = {}) {
-    return await Review.find(filters).populate('user', 'name email').populate('product', 'name');
+  async findAll({ filter = {}, skip = 0, limit = 10, sortOrder = -1 } = {}) {
+    return await Review.find(filter)
+      .populate('user', 'name email')
+      .populate('product', 'name')
+      .sort({ createdAt: sortOrder })
+      .skip(skip)
+      .limit(limit);
   }
 
-  async findByProduct(productId) {
+  async findByProduct(productId, { skip = 0, limit = 10, sortOrder = -1 } = {}) {
     return await Review.find({ product: productId, isActive: true })
       .populate('user', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: sortOrder })
+      .skip(skip)
+      .limit(limit);
   }
 
-  async findByUser(userId) {
+  async findByUser(userId, { skip = 0, limit = 10, sortOrder = -1 } = {}) {
     return await Review.find({ user: userId, isActive: true })
       .populate('product', 'name')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: sortOrder })
+      .skip(skip)
+      .limit(limit);
   }
 
   async findByProductAndUser(productId, userId) {
-    return await Review.findOne({ product: productId, user: userId });
+    return await Review.findOne({ product: productId, user: userId, isActive: true });
   }
 
   async update(id, updateData) {
@@ -35,12 +44,20 @@ class ReviewRepository {
       .populate('product', 'name');
   }
 
-  async delete(id) {
-    return await Review.findByIdAndDelete(id);
-  }
-
   async softDelete(id) {
     return await Review.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  }
+
+  async countByProduct(productId) {
+    return await Review.countDocuments({ product: productId, isActive: true });
+  }
+
+  async countByUser(userId) {
+    return await Review.countDocuments({ user: userId, isActive: true });
+  }
+
+  async countAll(filter = {}) {
+    return await Review.countDocuments(filter);
   }
 
   async getAverageRating(productId) {

@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './authRoutes.js';
 import productRoutes from './productRoutes.js';
+import categoryRoutes from './categoryRoutes.js';
 import userRoutes from './userRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
@@ -10,6 +11,7 @@ const router = express.Router();
 // API Routes
 router.use('/auth', authRoutes);      // Rutas de autenticación
 router.use('/products', productRoutes);
+router.use('/categories', categoryRoutes);
 router.use('/users', userRoutes);
 router.use('/orders', orderRoutes);
 router.use('/reviews', reviewRoutes); // Rutas de valoraciones y reseñas

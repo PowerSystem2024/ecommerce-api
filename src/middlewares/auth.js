@@ -34,6 +34,7 @@ const auth = async (req, res, next) => {
 
     // Adjuntar información del usuario al request
     req.user = {
+      id: decoded.id,
       userId: decoded.id,
       email: user.email,
       role: user.role

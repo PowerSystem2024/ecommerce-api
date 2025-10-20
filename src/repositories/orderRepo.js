@@ -28,6 +28,14 @@ class OrderRepository {
   async findByPaymentId(paymentId) {
     return await Order.findOne({ paymentId });
   }
+
+  async hasUserPurchasedProduct(userId, productId) {
+    return await Order.exists({
+      user: userId,
+      'products.product': productId,
+      status: { $in: ['paid', 'shipped', 'delivered'] }
+    });
+  }
 }
 
 export default new OrderRepository();

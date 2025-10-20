@@ -3,15 +3,17 @@ import reviewService from '../services/reviewService.js';
 const reviewController = {
   async createReview(req, res) {
     try {
+      const userId = req.user?.id || req.user?.userId;
       const reviewData = {
         ...req.body,
-        user: req.user.id // El usuario viene del middleware de autenticación
+        user: userId // El usuario viene del middleware de autenticación
       };
       
-      const review = await reviewService.createReview(reviewData);
+      const { review, ratingSummary } = await reviewService.createReview(reviewData);
       res.status(201).json({
         success: true,
         data: review,
+        meta: ratingSummary,
         message: 'Reseña creada exitosamente'
       });
     } catch (error) {
@@ -24,10 +26,11 @@ const reviewController = {
 
   async getReviewsByProduct(req, res) {
     try {
-      const reviews = await reviewService.getReviewsByProduct(req.params.productId);
+      const result = await reviewService.getReviewsByProduct(req.params.productId, req.query);
       res.json({
         success: true,
-        data: reviews
+        data: result.reviews,
+        pagination: result.pagination
       });
     } catch (error) {
       res.status(404).json({
@@ -39,10 +42,12 @@ const reviewController = {
 
   async getReviewsByUser(req, res) {
     try {
-      const reviews = await reviewService.getReviewsByUser(req.user.id);
+      const userId = req.user?.id || req.user?.userId;
+      const result = await reviewService.getReviewsByUser(userId, req.query);
       res.json({
         success: true,
-        data: reviews
+        data: result.reviews,
+        pagination: result.pagination
       });
     } catch (error) {
       res.status(500).json({
@@ -69,14 +74,16 @@ const reviewController = {
 
   async updateReview(req, res) {
     try {
+      const userId = req.user?.id || req.user?.userId;
       const review = await reviewService.updateReview(
         req.params.id, 
         req.body, 
-        req.user.id
+        userId
       );
       res.json({
         success: true,
-        data: review,
+        data: review.review,
+        meta: review.ratingSummary,
         message: 'Reseña actualizada exitosamente'
       });
     } catch (error) {
@@ -90,10 +97,12 @@ const reviewController = {
 
   async deleteReview(req, res) {
     try {
+      const userId = req.user?.id || req.user?.userId;
       const isAdmin = req.user.role === 'admin';
-      await reviewService.deleteReview(req.params.id, req.user.id, isAdmin);
+      const result = await reviewService.deleteReview(req.params.id, userId, isAdmin);
       res.json({
         success: true,
+        meta: result.ratingSummary,
         message: 'Reseña eliminada exitosamente'
       });
     } catch (error) {
@@ -122,10 +131,11 @@ const reviewController = {
 
   async getAllReviews(req, res) {
     try {
-      const reviews = await reviewService.getAllReviews(req.query);
+      const result = await reviewService.getAllReviews(req.query);
       res.json({
         success: true,
-        data: reviews
+        data: result.reviews,
+        pagination: result.pagination
       });
     } catch (error) {
       res.status(500).json({

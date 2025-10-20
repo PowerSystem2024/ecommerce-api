@@ -1,16 +1,18 @@
 import express from 'express';
 import productController from '../controllers/productCtrl.js';
-import auth from '../middlewares/auth.js';
+import reviewController from '../controllers/reviewCtrl.js';
+import { authenticateToken, isAdmin } from '../middlewares/auth.js';
 import { validate, validators } from '../utils/validator.js';
 
 const router = express.Router();
 
 // Aplicar validación a POST y PUT
-router.post('/', auth, validate(validators.createProduct), productController.createProduct);
-router.put('/:id', auth, validate(validators.createProduct), productController.updateProduct);
+router.post('/', authenticateToken, isAdmin, validate(validators.createProduct), productController.createProduct);
+router.put('/:id', authenticateToken, isAdmin, validate(validators.createProduct), productController.updateProduct);
 
 router.get('/', productController.getProducts);
+router.get('/:productId/reviews', reviewController.getReviewsByProduct);
 router.get('/:id', productController.getProduct);
-router.delete('/:id', auth, productController.deleteProduct);
+router.delete('/:id', authenticateToken, isAdmin, productController.deleteProduct);
 
 export default router;

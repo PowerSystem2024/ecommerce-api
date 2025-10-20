@@ -1,6 +1,6 @@
 import express from 'express';
 import reviewController from '../controllers/reviewCtrl.js';
-import auth from '../middlewares/auth.js';
+import { authenticateToken, isAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -9,13 +9,13 @@ router.get('/product/:productId', reviewController.getReviewsByProduct);
 router.get('/product/:productId/stats', reviewController.getProductRatingStats);
 
 // Rutas que requieren autenticación
-router.post('/', auth, reviewController.createReview);
-router.get('/my-reviews', auth, reviewController.getReviewsByUser);
-router.get('/:id', reviewController.getReview);
-router.put('/:id', auth, reviewController.updateReview);
-router.delete('/:id', auth, reviewController.deleteReview);
+router.post('/', authenticateToken, reviewController.createReview);
+router.get('/my-reviews', authenticateToken, reviewController.getReviewsByUser);
+router.get('/:id', authenticateToken, reviewController.getReview);
+router.put('/:id', authenticateToken, reviewController.updateReview);
+router.delete('/:id', authenticateToken, reviewController.deleteReview);
 
 // Ruta para administradores (opcional)
-router.get('/', auth, reviewController.getAllReviews);
+router.get('/', authenticateToken, isAdmin, reviewController.getAllReviews);
 
 export default router;
