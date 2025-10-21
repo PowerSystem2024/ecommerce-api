@@ -74,16 +74,24 @@ const orderController = {
   async updateOrderStatus(req, res) {
     try {
       const { status } = req.body;
-      const validStatuses = ['pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada'];
+      const validStatuses = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
       
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
           success: false,
-          message: 'Estado de orden inválido'
+          message: 'Invalid order status'
         });
       }
 
       const order = await orderService.updateOrderStatus(req.params.id, status);
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+      }
+
       res.json({
         success: true,
         data: order

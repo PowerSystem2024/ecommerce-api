@@ -49,7 +49,7 @@ const validators = {
   }),
 
   updateOrderStatus: Joi.object({
-    status: Joi.string().valid('pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada').required()
+    status: Joi.string().valid('pending', 'paid', 'shipped', 'delivered', 'cancelled').required()
   }),
 
   // Cart validation schemas

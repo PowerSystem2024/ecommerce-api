@@ -79,10 +79,10 @@ class ProductRepository {
     return await Category.find({ isActive: true }).select('name');
   }
 
-  async updateStock(id, quantity) {
+  async updateStock(id, newStock) {
     return await Product.findByIdAndUpdate(
-      id, 
-      { $inc: { stock: -quantity } }, 
+      id,
+      { stock: newStock },
       { new: true }
     );
   }
