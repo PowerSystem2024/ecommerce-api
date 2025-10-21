@@ -414,7 +414,7 @@ const swaggerSpec = {
         }
       }
     },
-    '/cart/items': {
+    '/cart/add': {
       post: {
         tags: ['Cart'],
         summary: 'Agregar producto al carrito',
@@ -440,14 +440,11 @@ const swaggerSpec = {
         }
       }
     },
-    '/cart/items/{productId}': {
+    '/cart/update': {
       put: {
         tags: ['Cart'],
         summary: 'Actualizar cantidad de un producto en el carrito',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'productId', in: 'path', required: true, schema: { type: 'string' } }
-        ],
         requestBody: {
           required: true,
           content: {
@@ -466,7 +463,9 @@ const swaggerSpec = {
           200: { description: 'Cantidad actualizada' },
           400: { description: 'Cantidad inválida o producto inexistente' }
         }
-      },
+      }
+    },
+    '/cart/remove/{productId}': {
       delete: {
         tags: ['Cart'],
         summary: 'Eliminar producto del carrito',

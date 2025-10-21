@@ -29,7 +29,7 @@
     "mongoose": "^7.5.0",
     "nodemailer": "^7.0.9",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.7.2"
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "jest": "^29.6.2",
