@@ -6,6 +6,12 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  sku: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
   description: {
     type: String,
     required: true
@@ -28,6 +34,18 @@ const productSchema = new mongoose.Schema({
   images: [{
     type: String
   }],
+  sizes: [{
+    type: String,
+    trim: true
+  }],
+  colors: [{
+    type: String,
+    trim: true
+  }],
+  tags: [{
+    type: String,
+    trim: true
+  }],
   isActive: {
     type: Boolean,
     default: true
@@ -42,9 +60,18 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0
+  },
+  soldCount: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true
 });
+
+productSchema.index({ name: 'text', description: 'text', tags: 'text' });
+productSchema.index({ category: 1, price: 1 });
+productSchema.index({ soldCount: -1 });
 
 export default mongoose.model('Product', productSchema);

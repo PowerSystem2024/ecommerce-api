@@ -76,17 +76,31 @@ const swaggerSpec = {
         properties: {
           _id: { type: 'string' },
           name: { type: 'string' },
+          sku: { type: 'string' },
           description: { type: 'string' },
           price: { type: 'number' },
-          stock: { type: 'integer' },
+          category: { $ref: '#/components/schemas/Category' },
+          stock: { type: 'number' },
           images: {
             type: 'array',
-            items: { type: 'string', format: 'uri' }
+            items: { type: 'string' }
           },
-          category: { type: 'string' },
+          sizes: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          colors: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string' }
+          },
           isActive: { type: 'boolean' },
           averageRating: { type: 'number', format: 'float' },
-          reviewsCount: { type: 'integer' }
+          reviewsCount: { type: 'integer' },
+          soldCount: { type: 'integer' }
         }
       },
       Review: {
@@ -233,7 +247,15 @@ const swaggerSpec = {
           { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1 } },
           { name: 'category', in: 'query', schema: { type: 'string' } },
-          { name: 'name', in: 'query', schema: { type: 'string' } }
+          { name: 'name', in: 'query', schema: { type: 'string' } },
+          { name: 'minPrice', in: 'query', schema: { type: 'number', minimum: 0 } },
+          { name: 'maxPrice', in: 'query', schema: { type: 'number', minimum: 0 } },
+          { name: 'inStock', in: 'query', schema: { type: 'boolean' } },
+          { name: 'sizes', in: 'query', schema: { type: 'string', description: 'Lista separada por comas, e.g., S,M,L' } },
+          { name: 'colors', in: 'query', schema: { type: 'string', description: 'Lista separada por comas, e.g., red,blue' } },
+          { name: 'tags', in: 'query', schema: { type: 'string', description: 'Lista separada por comas, e.g., nuevo,oferta' } },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', enum: ['name', 'price', 'createdAt', 'stock'] } },
+          { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'] } }
         ],
         responses: {
           200: {
