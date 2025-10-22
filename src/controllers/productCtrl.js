@@ -46,6 +46,37 @@ const productController = {
     }
   },
 
+  async searchProducts(req, res) {
+    try {
+      const result = await productService.searchProducts(req.query);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  async getSuggestions(req, res) {
+    try {
+      const { q, limit } = req.query;
+      const suggestions = await productService.getSearchSuggestions(q, limit);
+      res.json({
+        success: true,
+        data: suggestions
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
   async updateProduct(req, res) {
     try {
       const product = await productService.updateProduct(req.params.id, req.body);

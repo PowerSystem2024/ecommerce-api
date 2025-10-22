@@ -20,7 +20,12 @@ const validators = {
     price: Joi.number().positive().required(),
     category: Joi.string().required(),
     stock: Joi.number().integer().min(0).required(),
-    images: Joi.array().items(Joi.string().uri())
+    images: Joi.array().items(Joi.string().uri()),
+    sku: Joi.string().pattern(/^[a-zA-Z0-9._-]+$/).min(2).max(50).optional(),
+    sizes: Joi.array().items(Joi.string().min(1)).optional(),
+    colors: Joi.array().items(Joi.string().min(1)).optional(),
+    tags: Joi.array().items(Joi.string().min(1)).optional(),
+    soldCount: Joi.number().integer().min(0).optional()
   }),
 
   // Order validation schemas

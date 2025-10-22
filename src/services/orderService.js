@@ -31,6 +31,7 @@ class OrderService {
     // Restar stock de productos
     for (const item of orderData.products) {
       await productService.updateStock(item.product, -item.quantity);
+      await productService.incrementSoldCount(item.product, item.quantity);
     }
 
     return order;

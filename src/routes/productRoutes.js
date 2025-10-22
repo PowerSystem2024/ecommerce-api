@@ -11,6 +11,8 @@ router.post('/', authenticateToken, isAdmin, validate(validators.createProduct),
 router.put('/:id', authenticateToken, isAdmin, validate(validators.createProduct), productController.updateProduct);
 
 router.get('/', productController.getProducts);
+router.get('/search', productController.searchProducts);
+router.get('/suggestions', productController.getSuggestions);
 router.get('/:productId/reviews', reviewController.getReviewsByProduct);
 router.get('/:id', productController.getProduct);
 router.delete('/:id', authenticateToken, isAdmin, productController.deleteProduct);

@@ -36,16 +36,42 @@ class ProductRepository {
 
   // Búsqueda con paginación, orden y filtros avanzados
   async findWithFilters(query = {}, options = {}) {
-    const { sortBy = 'name', sortOrder = 'asc', page = 1, limit = 10 } = options;
+    const {
+      sortBy = 'name',
+      sortOrder = 'asc',
+      page = 1,
+      limit = 10,
+      useTextScore = false
+    } = options;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const sortOptions = {};
-    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    const products = await Product.find(query)
+    const normalizedSort = sortBy === 'popular' ? 'soldCount'
+      : sortBy === 'newest' ? 'createdAt'
+      : sortBy === 'relevance' ? 'score'
+      : sortBy;
+
+    if (normalizedSort !== 'score') {
+      sortOptions[normalizedSort] = sortOrder === 'desc' ? -1 : 1;
+    }
+
+    const findQuery = Product.find(query)
       .populate('category', 'name description')
-      .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
+
+    if (useTextScore) {
+      findQuery.select({ score: { $meta: 'textScore' } });
+      if (normalizedSort === 'score') {
+        findQuery.sort({ score: { $meta: 'textScore' } });
+      }
+    }
+
+    if (!useTextScore || normalizedSort !== 'score') {
+      findQuery.sort(sortOptions);
+    }
+
+    const products = await findQuery;
 
     const total = await Product.countDocuments(query);
 
@@ -85,6 +111,23 @@ class ProductRepository {
       { stock: newStock },
       { new: true }
     );
+  }
+
+  async incrementSoldCount(id, quantity) {
+    return await Product.findByIdAndUpdate(
+      id,
+      { $inc: { soldCount: quantity } },
+      { new: true }
+    );
+  }
+
+  async getSuggestions(term, limit = 5) {
+    return await Product.find({
+      isActive: true,
+      name: { $regex: term, $options: 'i' }
+    })
+      .select('name images price')
+      .limit(limit);
   }
 }
 
