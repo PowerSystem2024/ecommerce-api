@@ -28,6 +28,32 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Campos de perfil adicionales
+  phone: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  birthDate: {
+    type: Date,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['masculino', 'femenino', 'otro', 'prefiero no decirlo'],
+    default: 'prefiero no decirlo'
+  },
+  address: {
+    street: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
+    postalCode: { type: String, default: '' },
+    country: { type: String, default: '' }
+  },
+  avatar: {
+    type: String,
+    default: 'https://res.cloudinary.com/dki6gqomv/image/upload/v1/default-avatar.png'
+  },
   passwordResetToken: String,
   passwordResetExpires: Date,
   emailVerificationToken: String,

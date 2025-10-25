@@ -18,7 +18,8 @@ const swaggerSpec = {
     { name: 'Categories', description: 'Gestión de categorías' },
     { name: 'Cart', description: 'Operaciones del carrito de compras' },
     { name: 'Orders', description: 'Checkout y seguimiento de órdenes' },
-    { name: 'Reviews', description: 'Reseñas y valoraciones de productos' }
+    { name: 'Reviews', description: 'Reseñas y valoraciones de productos' },
+    { name: 'Users', description: 'Perfil de usuario y avatar' }
   ],
   components: {
     securitySchemes: {
@@ -752,6 +753,136 @@ const swaggerSpec = {
         responses: {
           200: { description: 'Reseña eliminada lógicamente' },
           403: { description: 'Solo autor o admin' }
+        }
+      }
+    },
+
+    '/users/profile': {
+      get: {
+        tags: ['Users'],
+        summary: 'Obtener perfil del usuario autenticado',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Perfil del usuario',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        _id: { type: 'string' },
+                        name: { type: 'string' },
+                        email: { type: 'string' },
+                        role: { type: 'string' },
+                        phone: { type: 'string' },
+                        birthDate: { type: 'string', format: 'date' },
+                        gender: { type: 'string' },
+                        address: {
+                          type: 'object',
+                          properties: {
+                            street: { type: 'string' },
+                            city: { type: 'string' },
+                            state: { type: 'string' },
+                            postalCode: { type: 'string' },
+                            country: { type: 'string' }
+                          }
+                        },
+                        avatar: { type: 'string', format: 'uri' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          401: { description: 'Token inválido' }
+        }
+      },
+      put: {
+        tags: ['Users'],
+        summary: 'Actualizar perfil del usuario autenticado',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  phone: { type: 'string' },
+                  birthDate: { type: 'string', format: 'date' },
+                  gender: { type: 'string', enum: ['masculino', 'femenino', 'otro', 'prefiero no decirlo'] },
+                  address: {
+                    type: 'object',
+                    properties: {
+                      street: { type: 'string' },
+                      city: { type: 'string' },
+                      state: { type: 'string' },
+                      postalCode: { type: 'string' },
+                      country: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Perfil actualizado' },
+          400: { description: 'Datos inválidos' },
+          401: { description: 'Token inválido' }
+        }
+      }
+    },
+
+    '/users/upload-avatar': {
+      post: {
+        tags: ['Users'],
+        summary: 'Subir imagen de avatar del usuario',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  avatar: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Archivo de imagen (jpg, png, webp), máx. 5MB'
+                  }
+                },
+                required: ['avatar']
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Avatar subido correctamente',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: { avatar: { type: 'string', format: 'uri' } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          400: { description: 'Archivo inválido o demasiado grande' },
+          401: { description: 'Token inválido' }
         }
       }
     }
