@@ -26,7 +26,7 @@ class ProductService {
 
     // Normalizar y validar page y limit
     const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 10;
+    const limitNum = Number(limit) || 12;
     if (!Number.isInteger(pageNum) || pageNum < 1) {
       const error = new Error('El parámetro "page" debe ser un entero positivo');
       error.status = 400;
@@ -209,7 +209,7 @@ class ProductService {
   }
 
   async getProductsWithFilters(filters = {}) {
-    const { category, minPrice, maxPrice, inStock, sortBy = 'name', sortOrder = 'asc', page = 1, limit = 10 } = filters;
+    const { category, minPrice, maxPrice, inStock, sortBy = 'name', sortOrder = 'asc', page = 1, limit = 12 } = filters;
     
     const query = { isActive: true };
     

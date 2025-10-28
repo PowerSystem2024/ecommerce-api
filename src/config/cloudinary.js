@@ -9,10 +9,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-export const uploadToCloudinary = async (fileBuffer, folder = 'ecommerce/avatars') => {
+export const uploadToCloudinary = async (fileBuffer, folder = 'ecommerce/avatars', extraOptions = {}) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'auto' },
+      { folder, resource_type: 'auto', colors: true, ...extraOptions },
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
