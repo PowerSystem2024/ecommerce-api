@@ -1,4 +1,5 @@
 import productService from '../services/productService.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
 
 const productController = {
   async createProduct(req, res) {
@@ -104,6 +105,30 @@ const productController = {
         success: false,
         message: error.message
       });
+    }
+  },
+
+  async uploadImages(req, res) {
+    try {
+      const files = req.files || [];
+      if (!files.length) {
+        return res.status(400).json({ success: false, message: 'No se enviaron imágenes' });
+      }
+
+      const folder = 'ecommerce/products';
+      const uploads = await Promise.all(
+        files.map(async (file) => {
+          const result = await uploadToCloudinary(file.buffer, folder);
+          return {
+            url: result.secure_url,
+            publicId: result.public_id
+          };
+        })
+      );
+
+      return res.status(201).json({ success: true, urls: uploads.map(u => u.url), assets: uploads });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
     }
   }
 };

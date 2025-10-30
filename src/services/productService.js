@@ -3,6 +3,11 @@ import productRepo from '../repositories/productRepo.js';
 class ProductService {
   async createProduct(productData) {
     // Validaciones de negocio aquí
+    // Normalizar SKU vacío para que sea verdaderamente opcional
+    if ('sku' in productData) {
+      const sku = typeof productData.sku === 'string' ? productData.sku.trim() : productData.sku;
+      if (!sku) delete productData.sku;
+    }
     if (productData.price <= 0) {
       throw new Error('El precio debe ser mayor a 0');
     }
@@ -92,6 +97,11 @@ class ProductService {
 
   async updateProduct(id, updateData) {
     const product = await this.getProductById(id);
+    // Normalizar SKU vacío en updates
+    if ('sku' in updateData) {
+      const sku = typeof updateData.sku === 'string' ? updateData.sku.trim() : updateData.sku;
+      if (!sku) delete updateData.sku;
+    }
     return await productRepo.update(id, updateData);
   }
 
