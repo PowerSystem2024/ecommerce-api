@@ -19,7 +19,8 @@ const swaggerSpec = {
     { name: 'Cart', description: 'Operaciones del carrito de compras' },
     { name: 'Orders', description: 'Checkout y seguimiento de órdenes' },
     { name: 'Reviews', description: 'Reseñas y valoraciones de productos' },
-    { name: 'Users', description: 'Perfil de usuario y avatar' }
+    { name: 'Users', description: 'Perfil de usuario y avatar' },
+    { name: 'Admin', description: 'Panel de administración - Solo administradores' }
   ],
   components: {
     securitySchemes: {
@@ -883,6 +884,548 @@ const swaggerSpec = {
           },
           400: { description: 'Archivo inválido o demasiado grande' },
           401: { description: 'Token inválido' }
+        }
+      }
+    },
+
+    // ==================== ADMIN ENDPOINTS ====================
+    '/admin/dashboard': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener estadísticas generales del dashboard',
+        description: 'Retorna métricas generales: usuarios, órdenes, productos, reseñas, ingresos, órdenes recientes y productos más vendidos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Estadísticas del dashboard',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        totalUsers: { type: 'integer' },
+                        totalOrders: { type: 'integer' },
+                        totalProducts: { type: 'integer' },
+                        totalReviews: { type: 'integer' },
+                        totalRevenue: { type: 'number' },
+                        averageOrderValue: { type: 'number' },
+                        recentOrders: { type: 'array', items: { $ref: '#/components/schemas/Order' } },
+                        topProducts: { type: 'array', items: { type: 'object' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          401: { description: 'Token inválido' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/sales-report': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener reporte de ventas por período',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'period',
+            in: 'query',
+            schema: { type: 'string', enum: ['day', 'week', 'month', 'year'], default: 'month' },
+            description: 'Período del reporte'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Reporte de ventas',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        period: { type: 'string' },
+                        dateRange: {
+                          type: 'object',
+                          properties: {
+                            start: { type: 'string', format: 'date-time' },
+                            end: { type: 'string', format: 'date-time' }
+                          }
+                        },
+                        data: { type: 'array', items: { type: 'object' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          400: { description: 'Período inválido' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/users': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Listar todos los usuarios con paginación y filtros',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, default: 10 } },
+          { name: 'role', in: 'query', schema: { type: 'string', enum: ['user', 'admin'] } },
+          { name: 'isActive', in: 'query', schema: { type: 'boolean' } },
+          { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Buscar por nombre o email' }
+        ],
+        responses: {
+          200: {
+            description: 'Lista de usuarios',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { type: 'object' } },
+                    pagination: {
+                      type: 'object',
+                      properties: {
+                        total: { type: 'integer' },
+                        page: { type: 'integer' },
+                        limit: { type: 'integer' },
+                        pages: { type: 'integer' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/users/stats': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener estadísticas de usuarios',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Estadísticas de usuarios',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        totalUsers: { type: 'integer' },
+                        activeUsers: { type: 'integer' },
+                        inactiveUsers: { type: 'integer' },
+                        adminUsers: { type: 'integer' },
+                        usersByRole: { type: 'object' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/users/{id}': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener usuario por ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        responses: {
+          200: { description: 'Usuario encontrado' },
+          404: { description: 'Usuario no encontrado' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/users/{id}/role': {
+      put: {
+        tags: ['Admin'],
+        summary: 'Actualizar rol de usuario',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['role'],
+                properties: {
+                  role: { type: 'string', enum: ['user', 'admin'] }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Rol actualizado correctamente' },
+          400: { description: 'Rol inválido o no se puede degradar al único admin' },
+          404: { description: 'Usuario no encontrado' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/users/{id}/status': {
+      put: {
+        tags: ['Admin'],
+        summary: 'Activar o desactivar usuario',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['isActive'],
+                properties: {
+                  isActive: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Estado actualizado correctamente' },
+          400: { description: 'No se puede desactivar al único admin activo' },
+          404: { description: 'Usuario no encontrado' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/orders': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Listar todas las órdenes con paginación y filtros',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, default: 10 } },
+          { name: 'status', in: 'query', schema: { type: 'string', enum: ['pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada'] } },
+          { name: 'userId', in: 'query', schema: { type: 'string' } },
+          { name: 'minAmount', in: 'query', schema: { type: 'number' } },
+          { name: 'maxAmount', in: 'query', schema: { type: 'number' } },
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } }
+        ],
+        responses: {
+          200: {
+            description: 'Lista de órdenes',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Order' } },
+                    pagination: { type: 'object' }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/orders/stats': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener estadísticas de órdenes',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Estadísticas de órdenes',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        totalOrders: { type: 'integer' },
+                        ordersByStatus: { type: 'object' },
+                        totalRevenue: { type: 'number' },
+                        averageOrderValue: { type: 'number' },
+                        completedOrders: { type: 'integer' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/orders/recent': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener órdenes recientes',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, default: 10 } }
+        ],
+        responses: {
+          200: {
+            description: 'Órdenes recientes',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Order' } }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/orders/{id}': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener orden por ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        responses: {
+          200: { description: 'Orden encontrada' },
+          404: { description: 'Orden no encontrada' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/orders/{id}/status': {
+      put: {
+        tags: ['Admin'],
+        summary: 'Actualizar estado de orden',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: { type: 'string', enum: ['pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada'] }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Estado actualizado correctamente' },
+          400: { description: 'Estado inválido o transición no permitida' },
+          404: { description: 'Orden no encontrada' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/reviews': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Listar todas las reseñas con paginación y filtros',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, default: 10 } },
+          { name: 'rating', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 5 } },
+          { name: 'productId', in: 'query', schema: { type: 'string' } },
+          { name: 'userId', in: 'query', schema: { type: 'string' } },
+          { name: 'isActive', in: 'query', schema: { type: 'boolean' } },
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } }
+        ],
+        responses: {
+          200: {
+            description: 'Lista de reseñas',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Review' } },
+                    pagination: { type: 'object' }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/reviews/stats': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener estadísticas de reseñas',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Estadísticas de reseñas',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        totalReviews: { type: 'integer' },
+                        activeReviews: { type: 'integer' },
+                        inactiveReviews: { type: 'integer' },
+                        averageRating: { type: 'number' },
+                        reviewsByRating: { type: 'object' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/reviews/recent': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener reseñas recientes',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, default: 10 } }
+        ],
+        responses: {
+          200: {
+            description: 'Reseñas recientes',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Review' } }
+                  }
+                }
+              }
+            }
+          },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/reviews/{id}': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Obtener reseña por ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        responses: {
+          200: { description: 'Reseña encontrada' },
+          404: { description: 'Reseña no encontrada' },
+          403: { description: 'Solo administradores' }
+        }
+      },
+      delete: {
+        tags: ['Admin'],
+        summary: 'Eliminar reseña',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        responses: {
+          200: { description: 'Reseña eliminada correctamente' },
+          404: { description: 'Reseña no encontrada' },
+          403: { description: 'Solo administradores' }
+        }
+      }
+    },
+
+    '/admin/reviews/{id}/status': {
+      put: {
+        tags: ['Admin'],
+        summary: 'Activar o desactivar reseña',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['isActive'],
+                properties: {
+                  isActive: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Estado actualizado correctamente' },
+          404: { description: 'Reseña no encontrada' },
+          403: { description: 'Solo administradores' }
         }
       }
     }

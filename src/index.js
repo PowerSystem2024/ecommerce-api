@@ -17,8 +17,18 @@ const PORT = process.env.PORT || 3001;
 // Conectar a la base de datos
 connectDB();
 
+// Configuración de CORS
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true, // Permite el envío de cookies/tokens
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  exposedHeaders: ['Content-Range', 'X-Total-Count']
+};
+
 // Middlewares
-app.use(cors()); // CORS
+app.use(cors(corsOptions)); // CORS con opciones
+app.options('*', cors(corsOptions)); // Manejar preflight para todas las rutas
 app.use(express.json()); // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded
 
