@@ -33,7 +33,7 @@ class OrderRepository {
     return await Order.exists({
       user: userId,
       'products.product': productId,
-      status: { $in: ['paid', 'shipped', 'delivered'] }
+      status: { $in: ['confirmada', 'enviada', 'entregada'] }
     });
   }
 }
