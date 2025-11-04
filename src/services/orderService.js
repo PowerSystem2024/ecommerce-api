@@ -27,14 +27,14 @@ class OrderService {
       totalAmount,
       shippingAddress: orderData.shippingAddress
     });
-
-    // Restar stock de productos
+// Restar stock de productos
     for (const item of orderData.products) {
       await productService.updateStock(item.product, -item.quantity);
       await productService.incrementSoldCount(item.product, item.quantity);
     }
 
-    return order;
+    // Devolver la orden con los datos del producto poblados
+    return await orderRepo.findById(order._id);
   }
 
   async createOrderFromCart(userId, shippingAddress) {
