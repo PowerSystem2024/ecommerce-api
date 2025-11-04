@@ -6,23 +6,49 @@ class OrderRepository {
   }
 
   async findById(id) {
-    return await Order.findById(id).populate('user products.product');
+    return await Order.findById(id)
+      .populate('user', 'name email')
+      .populate({
+        path: 'products.product',
+        select: 'name description images price sku'
+      });
   }
 
   async findByUserId(userId) {
-    return await Order.find({ user: userId }).populate('products.product');
+    return await Order.find({ user: userId })
+      .populate({
+        path: 'products.product',
+        select: 'name description images price sku'
+      })
+      .sort({ createdAt: -1 });
   }
 
   async findAll() {
-    return await Order.find().populate('user products.product');
+    return await Order.find()
+      .populate('user', 'name email')
+      .populate({
+        path: 'products.product',
+        select: 'name description images price sku'
+      })
+      .sort({ createdAt: -1 });
   }
 
   async update(id, updateData) {
-    return await Order.findByIdAndUpdate(id, updateData, { new: true });
+    return await Order.findByIdAndUpdate(id, updateData, { new: true })
+      .populate('user', 'name email')
+      .populate({
+        path: 'products.product',
+        select: 'name description images price sku'
+      });
   }
 
   async updateStatus(id, status) {
-    return await Order.findByIdAndUpdate(id, { status }, { new: true });
+    return await Order.findByIdAndUpdate(id, { status }, { new: true })
+      .populate('user', 'name email')
+      .populate({
+        path: 'products.product',
+        select: 'name description images price sku'
+      });
   }
 
   async findByPaymentId(paymentId) {
@@ -33,9 +59,10 @@ class OrderRepository {
     return await Order.exists({
       user: userId,
       'products.product': productId,
-      status: { $in: ['confirmada', 'enviada', 'entregada'] }
+      status: { $in: ['paid', 'shipped', 'delivered'] }
     });
   }
 }
 
 export default new OrderRepository();
+
