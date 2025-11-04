@@ -67,11 +67,14 @@ const adminOrderController = {
   async updateOrderStatus(req, res) {
     try {
       const { status } = req.body;
+      
+      // Validar estados permitidos
+      const validStatuses = ['pendiente', 'confirmada', 'enviada', 'entregada', 'cancelada'];
 
-      if (!status) {
+      if (!status || !validStatuses.includes(status)) {
         return res.status(400).json({
           success: false,
-          message: 'El campo "status" es requerido'
+          message: `Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}`
         });
       }
 
