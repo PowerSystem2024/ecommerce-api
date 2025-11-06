@@ -1,7 +1,7 @@
 import orderRepo from '../repositories/orderRepo.js';
 import productService from './productService.js';
 import cartService from './cartService.js';
-import { preference } from '../config/mercadoPago.js';
+import mercadoPagoService from './mercadoPagoService.js';
 
 class OrderService {
   async createOrder(userId, orderData) {
@@ -73,17 +73,8 @@ class OrderService {
   async createPaymentPreference(orderId) {
     const order = await this.getOrderById(orderId);
     
-    const preferenceData = {
-      items: order.products.map(item => ({
-        title: `Producto ${item.product.name}`,
-        quantity: item.quantity,
-        unit_price: item.price
-      })),
-      external_reference: orderId.toString(),
-      notification_url: `${process.env.BACKEND_URL}/api/webhooks/mercadopago`
-    };
-
-    return await preference.create({ body: preferenceData });
+    // Usar el nuevo servicio de MercadoPago
+    return await mercadoPagoService.createOrderPreference(order);
   }
 }
 
