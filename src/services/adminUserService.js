@@ -21,7 +21,10 @@ class AdminUserService {
     } = filters;
 
     // Construir query de filtros
-    const query = {};
+    const query = {
+      // Excluir usuarios eliminados por defecto
+      isDeleted: { $ne: true }
+    };
 
     if (role) {
       query.role = role;
@@ -156,15 +159,187 @@ class AdminUserService {
   }
 
   /**
+   * Actualiza información completa de un usuario
+   * @param {String} userId - ID del usuario
+   * @param {Object} updateData - Datos a actualizar
+   * @returns {Object} Usuario actualizado
+   */
+  async updateUser(userId, updateData) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Campos permitidos para actualizar
+    const allowedFields = ['name', 'email', 'phone', 'address'];
+    const updates = {};
+
+    // Solo actualizar campos permitidos
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        updates[field] = updateData[field];
+      }
+    });
+
+    // Validar email único si se está actualizando
+    if (updates.email && updates.email !== user.email) {
+      const existingUser = await User.findOne({ 
+        email: updates.email, 
+        _id: { $ne: userId },
+        isDeleted: { $ne: true }
+      });
+      
+      if (existingUser) {
+        throw new Error('El email ya está en uso por otro usuario');
+      }
+    }
+
+    // Aplicar actualizaciones
+    Object.assign(user, updates);
+    await user.save();
+
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      phone: user.phone,
+      address: user.address,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+  }
+
+  /**
+   * Eliminación lógica de un usuario
+   * @param {String} userId - ID del usuario
+   * @returns {Object} Resultado de la eliminación
+   */
+  async deleteUser(userId) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (user.isDeleted) {
+      throw new Error('El usuario ya está eliminado');
+    }
+
+    // No permitir eliminar al último admin activo
+    if (user.role === 'admin' && user.isActive) {
+      const activeAdminCount = await User.countDocuments({ 
+        role: 'admin', 
+        isActive: true,
+        isDeleted: { $ne: true },
+        _id: { $ne: userId }
+      });
+      
+      if (activeAdminCount === 0) {
+        throw new Error('No se puede eliminar al único administrador activo del sistema');
+      }
+    }
+
+    // Marcar como eliminado (soft delete)
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.isActive = false; // También desactivar
+    await user.save();
+
+    return {
+      message: 'Usuario eliminado correctamente',
+      userId: user._id
+    };
+  }
+
+  /**
+   * Restaurar un usuario eliminado
+   * @param {String} userId - ID del usuario
+   * @returns {Object} Usuario restaurado
+   */
+  async restoreUser(userId) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (!user.isDeleted) {
+      throw new Error('El usuario no está eliminado');
+    }
+
+    user.isDeleted = false;
+    user.deletedAt = null;
+    user.isActive = true; // Reactivar al restaurar
+    await user.save();
+
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive
+    };
+  }
+
+  /**
+   * Obtiene usuarios eliminados con paginación
+   * @param {Object} filters - Filtros de búsqueda
+   * @returns {Object} Lista de usuarios eliminados
+   */
+  async getDeletedUsers(filters = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search
+    } = filters;
+
+    // Query para usuarios eliminados
+    const query = { isDeleted: true };
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('-password -passwordResetToken -passwordResetExpires -emailVerificationToken -emailVerificationExpires')
+        .sort({ deletedAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      User.countDocuments(query)
+    ]);
+
+    return {
+      users,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
    * Obtiene estadísticas de usuarios
    * @returns {Object} Estadísticas
    */
   async getUserStats() {
-    const [totalUsers, activeUsers, adminUsers, usersByRole] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ isActive: true }),
-      User.countDocuments({ role: 'admin' }),
+    const baseQuery = { isDeleted: { $ne: true } };
+    
+    const [totalUsers, activeUsers, adminUsers, deletedUsers, usersByRole] = await Promise.all([
+      User.countDocuments(baseQuery),
+      User.countDocuments({ ...baseQuery, isActive: true }),
+      User.countDocuments({ ...baseQuery, role: 'admin' }),
+      User.countDocuments({ isDeleted: true }),
       User.aggregate([
+        { $match: baseQuery },
         {
           $group: {
             _id: '$role',
@@ -179,6 +354,7 @@ class AdminUserService {
       activeUsers,
       inactiveUsers: totalUsers - activeUsers,
       adminUsers,
+      deletedUsers,
       usersByRole: usersByRole.reduce((acc, item) => {
         acc[item._id] = item.count;
         return acc;

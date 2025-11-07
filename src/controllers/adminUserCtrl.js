@@ -120,6 +120,107 @@ const adminUserController = {
   },
 
   /**
+   * PUT /api/admin/users/:id
+   * Actualiza información completa de un usuario
+   */
+  async updateUser(req, res) {
+    try {
+      const { name, email, phone, address } = req.body;
+      
+      const user = await adminUserService.updateUser(req.params.id, {
+        name,
+        email,
+        phone,
+        address
+      });
+
+      res.json({
+        success: true,
+        message: 'Usuario actualizado correctamente',
+        data: user
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('no encontrado') ? 404 : 400;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  /**
+   * DELETE /api/admin/users/:id
+   * Eliminación lógica de un usuario
+   */
+  async deleteUser(req, res) {
+    try {
+      const result = await adminUserService.deleteUser(req.params.id);
+
+      res.json({
+        success: true,
+        message: result.message,
+        data: { userId: result.userId }
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('no encontrado') ? 404 : 400;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  /**
+   * POST /api/admin/users/:id/restore
+   * Restaurar un usuario eliminado
+   */
+  async restoreUser(req, res) {
+    try {
+      const user = await adminUserService.restoreUser(req.params.id);
+
+      res.json({
+        success: true,
+        message: 'Usuario restaurado correctamente',
+        data: user
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('no encontrado') ? 404 : 400;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  /**
+   * GET /api/admin/users/deleted
+   * Lista usuarios eliminados
+   */
+  async getDeletedUsers(req, res) {
+    try {
+      const filters = {
+        page: req.query.page,
+        limit: req.query.limit,
+        search: req.query.search
+      };
+
+      const result = await adminUserService.getDeletedUsers(filters);
+
+      res.json({
+        success: true,
+        data: result.users,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener usuarios eliminados',
+        error: error.message
+      });
+    }
+  },
+
+  /**
    * GET /api/admin/users/stats
    * Obtiene estadísticas de usuarios
    */

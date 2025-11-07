@@ -1,4 +1,5 @@
 import reviewService from '../services/reviewService.js';
+import reviewValidationService from '../services/reviewValidationService.js';
 
 const reviewController = {
   async createReview(req, res) {
@@ -48,6 +49,23 @@ const reviewController = {
         success: true,
         data: result.reviews,
         pagination: result.pagination
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  async getReviewableProducts(req, res) {
+    try {
+      const userId = req.user?.id || req.user?.userId;
+      const products = await reviewValidationService.getReviewableProducts(userId);
+      res.json({
+        success: true,
+        data: products,
+        message: products.length > 0 ? 'Productos disponibles para reseñar' : 'No tienes productos pendientes de reseñar'
       });
     } catch (error) {
       res.status(500).json({
