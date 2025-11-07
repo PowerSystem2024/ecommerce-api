@@ -56,13 +56,14 @@ class OrderRepository {
   }
 
   async hasUserPurchasedProduct(userId, productId) {
+    const purchaseStatuses = ['confirmada', 'enviada', 'entregada'];
+
     return await Order.exists({
       user: userId,
       'products.product': productId,
-      status: { $in: ['paid', 'shipped', 'delivered'] }
+      status: { $in: purchaseStatuses }
     });
   }
 }
 
 export default new OrderRepository();
-

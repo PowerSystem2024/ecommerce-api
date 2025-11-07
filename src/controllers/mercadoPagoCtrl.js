@@ -112,27 +112,57 @@ const mercadoPagoController = {
    */
   async processWebhook(req, res) {
     try {
-      // Extraer información del webhook
-      const topic = req.query.topic || req.body.topic;
-      const resourceId = req.query.id || req.query.resource_id || req.body.id || req.body.resource_id;
+      console.log('=== WEBHOOK RECIBIDO ===');
+      console.log('Query params:', req.query);
+      console.log('Body:', JSON.stringify(req.body, null, 2));
+
+      // MercadoPago puede enviar el webhook de diferentes formas:
+      // 1. Como query params: ?topic=payment&id=123456789
+      // 2. Como body: { type: "payment", action: "payment", data: { id: "123456789", status: "approved" } }
+      // 3. Como body directo: { topic: "payment", id: "123456789" }
+
+      let topic = req.query.type || req.query.topic || req.query.action || 
+                  req.body.type || req.body.topic || req.body.action;
+      let resourceId = req.query.id || req.query.data_id || 
+                       req.body.data?.id || req.body.id || req.body.data_id;
       const data = req.body.data || req.body;
 
+      // Si viene en formato de notificación de MercadoPago con action
+      if (req.body.action && req.body.data) {
+        topic = req.body.action; // action puede ser "payment" o "preapproval"
+        resourceId = req.body.data.id;
+      } else if (req.body.type && req.body.data) {
+        topic = req.body.type;
+        resourceId = req.body.data.id;
+      }
+
+      console.log(`Topic extraído: ${topic}`);
+      console.log(`Resource ID extraído: ${resourceId}`);
+
       if (!topic || !resourceId) {
-        return res.status(400).json({
+        console.error('Datos de webhook incompletos:', { topic, resourceId });
+        // Responder 200 para que MercadoPago no reintente
+        return res.status(200).json({
           success: false,
           message: 'Datos de webhook incompletos'
         });
       }
 
-      await mercadoPagoService.processWebhook(topic, resourceId, data);
+      // Procesar el webhook de forma asíncrona (no bloquear la respuesta)
+      mercadoPagoService.processWebhook(topic, resourceId, data).catch(error => {
+        console.error('Error procesando webhook (asíncrono):', error);
+      });
 
-      res.json({
+      // Responder inmediatamente con 200 OK
+      // MercadoPago requiere respuesta rápida, el procesamiento puede ser asíncrono
+      res.status(200).json({
         success: true,
-        message: 'Webhook procesado exitosamente'
+        message: 'Webhook recibido y procesando'
       });
     } catch (error) {
       console.error('Error en webhook:', error);
-      res.status(500).json({
+      // Siempre responder 200 para que MercadoPago no reintente infinitamente
+      res.status(200).json({
         success: false,
         message: error.message
       });

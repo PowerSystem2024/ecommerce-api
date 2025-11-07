@@ -5,6 +5,12 @@ import { validators, validate } from '../utils/validator.js';
 
 const router = express.Router();
 
+// Rutas de redirección de MercadoPago (públicas, sin autenticación)
+// IMPORTANTE: Estas rutas deben estar ANTES de las rutas con parámetros dinámicos
+router.get('/success', orderController.paymentSuccess);
+router.get('/failure', orderController.paymentFailure);
+router.get('/pending', orderController.paymentPending);
+
 // POST /api/orders - Crear orden desde datos directos
 router.post('/', auth, validate(validators.createOrder), orderController.createOrder);
 
@@ -22,5 +28,8 @@ router.put('/:id/status', auth, validate(validators.updateOrderStatus), orderCon
 
 // POST /api/orders/:id/payment - Crear preferencia de pago
 router.post('/:id/payment', auth, orderController.createPayment);
+
+// POST /api/orders/:id/verify-payment - Verificar y actualizar estado de pago
+router.post('/:id/verify-payment', auth, orderController.verifyPayment);
 
 export default router;

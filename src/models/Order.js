@@ -34,6 +34,18 @@ const orderSchema = new mongoose.Schema({
   paymentId: {
     type: String
   },
+  isPaid: {
+    type: Boolean,
+    default: false
+  },
+  paidAt: {
+    type: Date
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'cancelled', 'refunded', 'charged_back'],
+    default: 'pending'
+  },
   shippingAddress: {
     street: String,
     city: String,

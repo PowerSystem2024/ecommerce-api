@@ -1,4 +1,11 @@
 import { paymentClient, preferenceClient, preApprovalClient, appUrl } from '../config/mercadoPago.js';
+import orderRepo from '../repositories/orderRepo.js';
+
+// URL del frontend para redirecciones
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// URL del webhook (puede ser ngrok en desarrollo o la URL de producción)
+const webhookUrl = process.env.WEBHOOK_URL || process.env.NGROK_URL || `${appUrl}/api/mercadopago/webhook`;
 
 class MercadoPagoService {
   /**
@@ -23,6 +30,11 @@ class MercadoPagoService {
         payer_email: createSubscriptionDto.payerEmail,
         status: 'pending'
       };
+
+      // Agregar notification_url si está disponible
+      if (webhookUrl) {
+        subscriptionData.notification_url = webhookUrl;
+      }
 
       console.log('Datos enviados a Mercado Pago:', JSON.stringify(subscriptionData, null, 2));
 
@@ -58,9 +70,9 @@ class MercadoPagoService {
     try {
       console.log('Creando pago único en Mercado Pago');
 
-      const successUrl = createPaymentDto.successUrl || `${appUrl}/mercadopago/success`;
-      const failureUrl = createPaymentDto.failureUrl || `${appUrl}/mercadopago/failure`;
-      const pendingUrl = createPaymentDto.pendingUrl || `${appUrl}/mercadopago/pending`;
+      const successUrl = createPaymentDto.successUrl || `${frontendUrl}/payment/success`;
+      const failureUrl = createPaymentDto.failureUrl || `${frontendUrl}/payment/failure`;
+      const pendingUrl = createPaymentDto.pendingUrl || `${frontendUrl}/payment/pending`;
 
       const preferenceData = {
         items: [
@@ -81,8 +93,7 @@ class MercadoPagoService {
           failure: failureUrl,
           pending: pendingUrl
         },
-        notification_url: createPaymentDto.notificationUrl || `${appUrl}/api/mercadopago/webhook`,
-        auto_return: 'approved'
+        notification_url: createPaymentDto.notificationUrl || webhookUrl
       };
 
       const preference = await preferenceClient.create({
@@ -113,6 +124,11 @@ class MercadoPagoService {
       console.log('Order ID:', order._id);
       console.log('Total:', order.totalAmount);
 
+      // Construir las URLs de redirección
+      const successUrl = `${frontendUrl}/payment/success`;
+      const failureUrl = `${frontendUrl}/payment/failure`;
+      const pendingUrl = `${frontendUrl}/payment/pending`;
+
       const preferenceData = {
         items: order.products.map((item) => ({
           id: item.product._id?.toString() || item.product.toString(),
@@ -126,11 +142,11 @@ class MercadoPagoService {
         },
         external_reference: order._id.toString(),
         back_urls: {
-          success: `${appUrl}/orders/success`,
-          failure: `${appUrl}/orders/failure`,
-          pending: `${appUrl}/orders/pending`
+          success: successUrl,
+          failure: failureUrl,
+          pending: pendingUrl
         },
-        notification_url: `${appUrl}/api/mercadopago/webhook`
+        notification_url: webhookUrl
       };
 
       console.log('Datos de preferencia:', JSON.stringify(preferenceData, null, 2));
@@ -233,9 +249,74 @@ class MercadoPagoService {
    */
   async processPaymentWebhook(paymentId, data) {
     try {
-      console.log(`Procesando webhook de pago: ${paymentId} - Estado: ${data.status}`);
-      // Aquí se puede implementar la lógica específica para procesar pagos
-      // Por ejemplo, notificar a otros servicios, actualizar base de datos, etc.
+      console.log(`=== PROCESANDO WEBHOOK DE PAGO ===`);
+      console.log(`Payment ID: ${paymentId}`);
+      console.log(`Data recibida:`, JSON.stringify(data, null, 2));
+
+      // Obtener información completa del pago desde MercadoPago
+      const payment = await paymentClient.get({ id: paymentId });
+      
+      console.log(`Pago obtenido de MercadoPago:`, JSON.stringify(payment, null, 2));
+
+      // Obtener el external_reference (orderId) del pago
+      const orderId = payment.external_reference;
+      
+      if (!orderId) {
+        console.error('No se encontró external_reference en el pago');
+        throw new Error('No se encontró external_reference en el pago');
+      }
+
+      console.log(`Order ID encontrado: ${orderId}`);
+
+      // Buscar la orden
+      const order = await orderRepo.findById(orderId);
+      
+      if (!order) {
+        console.error(`Orden no encontrada: ${orderId}`);
+        throw new Error(`Orden no encontrada: ${orderId}`);
+      }
+
+      // Mapear estados de MercadoPago a nuestros estados
+      // Verificar primero en data.status (viene del webhook), luego en payment.status
+      const paymentStatus = data.status || payment.status || 'pending';
+      const isApproved = paymentStatus === 'approved';
+      
+      console.log(`Estado del pago detectado: ${paymentStatus}`);
+      console.log(`¿Pago aprobado?: ${isApproved}`);
+      
+      // Preparar datos de actualización
+      const updateData = {
+        paymentId: paymentId.toString(),
+        paymentStatus: paymentStatus,
+        isPaid: isApproved
+      };
+
+      // Si el pago fue aprobado, actualizar estado y fecha de pago
+      if (isApproved) {
+        updateData.status = 'confirmada';
+        updateData.paidAt = new Date();
+        console.log('✅ Pago aprobado - Actualizando orden a confirmada');
+      } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+        updateData.status = 'cancelada';
+        console.log(`❌ Pago ${paymentStatus} - Actualizando orden a cancelada`);
+      } else {
+        console.log(`⏳ Pago en estado: ${paymentStatus} - Manteniendo orden en pendiente`);
+      }
+
+      // Actualizar la orden
+      const updatedOrder = await orderRepo.update(orderId, updateData);
+      
+      console.log(`✅ Orden actualizada exitosamente:`, {
+        orderId: orderId,
+        status: updatedOrder.status,
+        isPaid: updatedOrder.isPaid,
+        paymentStatus: updatedOrder.paymentStatus,
+        paidAt: updatedOrder.paidAt
+      });
+
+      console.log(`=== FIN PROCESAMIENTO WEBHOOK ===`);
+      
+      return updatedOrder;
     } catch (error) {
       console.error('Error al procesar webhook de pago:', error);
       throw error;

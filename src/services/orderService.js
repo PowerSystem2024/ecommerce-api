@@ -76,6 +76,64 @@ class OrderService {
     // Usar el nuevo servicio de MercadoPago
     return await mercadoPagoService.createOrderPreference(order);
   }
+
+  /**
+   * Verificar y actualizar el estado del pago
+   * Se usa cuando el usuario regresa de MercadoPago
+   */
+  async verifyAndUpdatePayment(paymentId, orderId) {
+    try {
+      console.log(`=== VERIFICANDO PAGO ===`);
+      console.log(`Payment ID: ${paymentId}`);
+      console.log(`Order ID: ${orderId}`);
+
+      // Obtener información del pago desde MercadoPago
+      const payment = await mercadoPagoService.getPayment(paymentId);
+      
+      console.log(`Pago obtenido:`, JSON.stringify(payment, null, 2));
+
+      // Verificar que el external_reference coincida con el orderId
+      if (payment.external_reference !== orderId.toString()) {
+        console.warn(`External reference no coincide: ${payment.external_reference} !== ${orderId}`);
+      }
+
+      // Mapear estados de MercadoPago
+      const paymentStatus = payment.status || 'pending';
+      const isApproved = paymentStatus === 'approved';
+      
+      // Preparar datos de actualización
+      const updateData = {
+        paymentId: paymentId.toString(),
+        paymentStatus: paymentStatus,
+        isPaid: isApproved
+      };
+
+      // Si el pago fue aprobado, actualizar estado y fecha de pago
+      if (isApproved) {
+        updateData.status = 'confirmada';
+        updateData.paidAt = new Date();
+        console.log('✅ Pago aprobado - Actualizando orden');
+      } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+        updateData.status = 'cancelada';
+        console.log(`❌ Pago ${paymentStatus} - Actualizando orden`);
+      }
+
+      // Actualizar la orden
+      const updatedOrder = await orderRepo.update(orderId, updateData);
+      
+      console.log(`✅ Orden actualizada:`, {
+        orderId: orderId,
+        status: updatedOrder.status,
+        isPaid: updatedOrder.isPaid,
+        paymentStatus: updatedOrder.paymentStatus
+      });
+
+      return updatedOrder;
+    } catch (error) {
+      console.error('Error verificando pago:', error);
+      throw error;
+    }
+  }
 }
 
 export default new OrderService();
