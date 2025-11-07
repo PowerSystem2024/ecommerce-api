@@ -28,6 +28,9 @@ router.get('/sales-report', dashboardController.getSalesReport);
 // GET /api/admin/users/stats - Estadísticas de usuarios (debe ir antes de /:id)
 router.get('/users/stats', adminUserController.getUserStats);
 
+// GET /api/admin/users/deleted - Listar usuarios eliminados (debe ir antes de /:id)
+router.get('/users/deleted', adminUserController.getDeletedUsers);
+
 // GET /api/admin/users - Listar todos los usuarios
 router.get('/users', adminUserController.getAllUsers);
 
@@ -39,6 +42,15 @@ router.put('/users/:id/role', adminUserController.updateUserRole);
 
 // PUT /api/admin/users/:id/status - Actualizar estado de usuario
 router.put('/users/:id/status', adminUserController.updateUserStatus);
+
+// PUT /api/admin/users/:id - Actualizar información completa de usuario
+router.put('/users/:id', adminUserController.updateUser);
+
+// DELETE /api/admin/users/:id - Eliminación lógica de usuario
+router.delete('/users/:id', adminUserController.deleteUser);
+
+// POST /api/admin/users/:id/restore - Restaurar usuario eliminado
+router.post('/users/:id/restore', adminUserController.restoreUser);
 
 /**
  * Gestión de Órdenes
