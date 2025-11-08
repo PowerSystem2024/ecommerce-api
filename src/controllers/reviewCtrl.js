@@ -4,10 +4,16 @@ const reviewController = {
   async createReview(req, res) {
     try {
       const userId = req.user?.id || req.user?.userId;
+      const { productId, ...payload } = req.body;
       const reviewData = {
-        ...req.body,
+        ...payload,
+        product: req.body.product || productId,
         user: userId // El usuario viene del middleware de autenticación
       };
+
+      if (!reviewData.product) {
+        throw new Error('Producto requerido para crear reseña');
+      }
       
       const { review, ratingSummary } = await reviewService.createReview(reviewData);
       res.status(201).json({
