@@ -11,6 +11,7 @@ router.get('/product/:productId/stats', reviewController.getProductRatingStats);
 // Rutas que requieren autenticación
 router.post('/', authenticateToken, reviewController.createReview);
 router.get('/my-reviews', authenticateToken, reviewController.getReviewsByUser);
+router.get('/reviewable-products', authenticateToken, reviewController.getReviewableProducts);
 router.get('/:id', authenticateToken, reviewController.getReview);
 router.put('/:id', authenticateToken, reviewController.updateReview);
 router.delete('/:id', authenticateToken, reviewController.deleteReview);

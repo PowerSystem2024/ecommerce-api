@@ -11,6 +11,11 @@ const reviewSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  order: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: true
+  },
   rating: {
     type: Number,
     required: true,
@@ -31,7 +36,7 @@ const reviewSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Índice compuesto para evitar reviews duplicadas del mismo usuario al mismo producto
-reviewSchema.index({ product: 1, user: 1 }, { unique: true });
+// Índice compuesto para evitar reviews duplicadas del mismo usuario al mismo producto en la misma orden
+reviewSchema.index({ product: 1, user: 1, order: 1 }, { unique: true });
 
 export default mongoose.model('Review', reviewSchema);
