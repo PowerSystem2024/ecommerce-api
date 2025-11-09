@@ -2,9 +2,24 @@ const swaggerSpec = {
   openapi: '3.0.1',
   info: {
     title: 'Ecommerce API',
-    version: '1.0.0',
-    description:
-      'API de ecommerce para tienda de ropa. Incluye autenticación, productos, categorías, carrito, órdenes y reseñas. Cada endpoint detalla requisitos de autenticación y formatos de entrada/salida.'
+    version: '1.0.1',
+    description: `API de ecommerce para tienda de ropa. Incluye:
+- Autenticación JWT con refresh tokens
+- Gestión de productos y categorías
+- Carrito de compras
+- Proceso de checkout con MercadoPago
+- Sistema de reseñas
+- Panel de administración
+
+Cada endpoint incluye ejemplos de solicitud/respuesta y códigos de error.`,
+    contact: {
+      name: 'Soporte Técnico',
+      email: 'soporte@ecommerce.com'
+    },
+    license: {
+      name: 'MIT',
+      url: 'https://opensource.org/licenses/MIT'
+    }
   },
   servers: [
     {
@@ -27,10 +42,97 @@ const swaggerSpec = {
       bearerAuth: {
         type: 'http',
         scheme: 'bearer',
-        bearerFormat: 'JWT'
+        bearerFormat: 'JWT',
+        description: 'Incluir el token JWT en el formato: Bearer <token>'
+      }
+    },
+    responses: {
+      UnauthorizedError: {
+        description: 'Token inválido o expirado',
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/ErrorResponse'
+            },
+            example: {
+              status: 'error',
+              message: 'No autorizado. Por favor inicia sesión.'
+            }
+          }
+        }
+      },
+      BadRequestError: {
+        description: 'Datos de entrada inválidos',
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/ErrorResponse'
+            },
+            example: {
+              status: 'error',
+              message: 'Error de validación',
+              errors: [
+                {
+                  field: 'email',
+                  message: 'El correo electrónico es requerido'
+                }
+              ]
+            }
+          }
+        }
+      },
+      NotFoundError: {
+        description: 'Recurso no encontrado',
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/ErrorResponse'
+            },
+            example: {
+              status: 'error',
+              message: 'Producto no encontrado'
+            }
+          }
+        }
       }
     },
     schemas: {
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['error', 'fail'] },
+          message: { type: 'string' },
+          errors: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                field: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      SuccessResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['success'] },
+          message: { type: 'string' },
+          data: { type: 'object' }
+        }
+      },
+      Pagination: {
+        type: 'object',
+        properties: {
+          total: { type: 'integer' },
+          page: { type: 'integer' },
+          limit: { type: 'integer' },
+          totalPages: { type: 'integer' },
+          hasNextPage: { type: 'boolean' },
+          hasPrevPage: { type: 'boolean' }
+        }
+      },
       RegisterRequest: {
         type: 'object',
         required: ['name', 'email', 'password'],
@@ -75,29 +177,111 @@ const swaggerSpec = {
       },
       Product: {
         type: 'object',
+        required: ['name', 'price', 'category', 'stock'],
         properties: {
-          _id: { type: 'string' },
-          name: { type: 'string' },
-          sku: { type: 'string' },
-          description: { type: 'string' },
-          price: { type: 'number' },
-          category: { $ref: '#/components/schemas/Category' },
-          stock: { type: 'number' },
+          _id: { 
+            type: 'string',
+            example: '507f1f77bcf86cd799439011'
+          },
+          name: { 
+            type: 'string',
+            example: 'Camiseta básica',
+            minLength: 3,
+            maxLength: 100
+          },
+          sku: { 
+            type: 'string',
+            example: 'PROD-001',
+            description: 'Código único del producto'
+          },
+          description: { 
+            type: 'string',
+            example: 'Camiseta 100% algodón'
+          },
+          price: { 
+            type: 'number',
+            minimum: 0,
+            example: 29.99
+          },
+          discountPrice: {
+            type: 'number',
+            minimum: 0,
+            example: 24.99,
+            description: 'Precio con descuento (opcional)'
+          },
+          category: { 
+            $ref: '#/components/schemas/Category',
+            description: 'Categoría principal del producto'
+          },
+          stock: { 
+            type: 'integer',
+            minimum: 0,
+            example: 50
+          },
           images: {
             type: 'array',
-            items: { type: 'string' }
+            items: { 
+              type: 'string',
+              format: 'uri',
+              example: 'https://res.cloudinary.com/.../camiseta.jpg'
+            },
+            minItems: 1,
+            description: 'URLs de las imágenes del producto'
           },
           sizes: {
             type: 'array',
-            items: { type: 'string' }
+            items: { 
+              type: 'string',
+              enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Única']
+            },
+            description: 'Tallas disponibles'
           },
           colors: {
             type: 'array',
-            items: { type: 'string' }
+            items: { 
+              type: 'string',
+              example: ['rojo', 'azul', 'negro']
+            },
+            description: 'Colores disponibles'
           },
           tags: {
             type: 'array',
-            items: { type: 'string' }
+            items: { 
+              type: 'string',
+              example: ['nuevo', 'oferta', 'verano2023']
+            },
+            description: 'Etiquetas para búsqueda y filtrado'
+          },
+          isActive: {
+            type: 'boolean',
+            default: true,
+            description: 'Indica si el producto está disponible para la venta'
+          },
+          rating: {
+            type: 'number',
+            minimum: 0,
+            maximum: 5,
+            example: 4.5,
+            description: 'Calificación promedio del producto (0-5)'
+          },
+          numReviews: {
+            type: 'integer',
+            minimum: 0,
+            example: 24,
+            description: 'Número de reseñas del producto'
+          },
+          featured: {
+            type: 'boolean',
+            default: false,
+            description: 'Producto destacado en la página principal'
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time'
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'date-time'
           },
           isActive: { type: 'boolean' },
           averageRating: { type: 'number', format: 'float' },
