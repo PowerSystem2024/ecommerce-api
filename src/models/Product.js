@@ -6,6 +6,12 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  sku: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
   description: {
     type: String,
     required: true
@@ -16,7 +22,8 @@ const productSchema = new mongoose.Schema({
     min: 0
   },
   category: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
     required: true
   },
   stock: {
@@ -27,12 +34,44 @@ const productSchema = new mongoose.Schema({
   images: [{
     type: String
   }],
+  sizes: [{
+    type: String,
+    trim: true
+  }],
+  colors: [{
+    type: String,
+    trim: true
+  }],
+  tags: [{
+    type: String,
+    trim: true
+  }],
   isActive: {
     type: Boolean,
     default: true
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  reviewsCount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  soldCount: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true
 });
+
+productSchema.index({ name: 'text', description: 'text', tags: 'text' });
+productSchema.index({ category: 1, price: 1 });
+productSchema.index({ soldCount: -1 });
 
 export default mongoose.model('Product', productSchema);

@@ -1,4 +1,5 @@
 import productService from '../services/productService.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
 
 const productController = {
   async createProduct(req, res) {
@@ -46,6 +47,37 @@ const productController = {
     }
   },
 
+  async searchProducts(req, res) {
+    try {
+      const result = await productService.searchProducts(req.query);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
+  async getSuggestions(req, res) {
+    try {
+      const { q, limit } = req.query;
+      const suggestions = await productService.getSearchSuggestions(q, limit);
+      res.json({
+        success: true,
+        data: suggestions
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+
   async updateProduct(req, res) {
     try {
       const product = await productService.updateProduct(req.params.id, req.body);
@@ -73,6 +105,30 @@ const productController = {
         success: false,
         message: error.message
       });
+    }
+  },
+
+  async uploadImages(req, res) {
+    try {
+      const files = req.files || [];
+      if (!files.length) {
+        return res.status(400).json({ success: false, message: 'No se enviaron imágenes' });
+      }
+
+      const folder = 'ecommerce/products';
+      const uploads = await Promise.all(
+        files.map(async (file) => {
+          const result = await uploadToCloudinary(file.buffer, folder);
+          return {
+            url: result.secure_url,
+            publicId: result.public_id
+          };
+        })
+      );
+
+      return res.status(201).json({ success: true, urls: uploads.map(u => u.url), assets: uploads });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
     }
   }
 };

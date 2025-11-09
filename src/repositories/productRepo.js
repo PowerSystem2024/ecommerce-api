@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 
 class ProductRepository {
   async create(productData) {
@@ -10,7 +11,78 @@ class ProductRepository {
   }
 
   async findAll(filters = {}) {
-    return await Product.find(filters);
+    const query = { isActive: true }; // Solo productos activos por defecto
+    
+    if (filters.category) {
+      query.category = filters.category;
+    }
+    
+    if (filters.name) {
+      query.name = { $regex: filters.name, $options: 'i' }; // Búsqueda case-insensitive
+    }
+    
+    if (filters.minPrice || filters.maxPrice) {
+      query.price = {};
+      if (filters.minPrice) {
+        query.price.$gte = filters.minPrice;
+      }
+      if (filters.maxPrice) {
+        query.price.$lte = filters.maxPrice;
+      }
+    }
+    
+    return await Product.find(query);
+  }
+
+  // Búsqueda con paginación, orden y filtros avanzados
+  async findWithFilters(query = {}, options = {}) {
+    const {
+      sortBy = 'name',
+      sortOrder = 'asc',
+      page = 1,
+      limit = 10,
+      useTextScore = false
+    } = options;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOptions = {};
+
+    const normalizedSort = sortBy === 'popular' ? 'soldCount'
+      : sortBy === 'newest' ? 'createdAt'
+      : sortBy === 'relevance' ? 'score'
+      : sortBy;
+
+    if (normalizedSort !== 'score') {
+      sortOptions[normalizedSort] = sortOrder === 'desc' ? -1 : 1;
+    }
+
+    const findQuery = Product.find(query)
+      .populate('category', 'name description')
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    if (useTextScore) {
+      findQuery.select({ score: { $meta: 'textScore' } });
+      if (normalizedSort === 'score') {
+        findQuery.sort({ score: { $meta: 'textScore' } });
+      }
+    }
+
+    if (!useTextScore || normalizedSort !== 'score') {
+      findQuery.sort(sortOptions);
+    }
+
+    const products = await findQuery;
+
+    const total = await Product.countDocuments(query);
+
+    return {
+      products,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalProducts: total
+      }
+    };
   }
 
   async update(id, updateData) {
@@ -18,19 +90,44 @@ class ProductRepository {
   }
 
   async delete(id) {
-    return await Product.findByIdAndDelete(id);
+    return await Product.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
   }
 
   async findByCategory(category) {
     return await Product.find({ category, isActive: true });
   }
 
-  async updateStock(id, quantity) {
+  async findAllCategories() {
+    return await Category.find({ isActive: true }).select('name');
+  }
+
+  async updateStock(id, newStock) {
     return await Product.findByIdAndUpdate(
-      id, 
-      { $inc: { stock: -quantity } }, 
+      id,
+      { stock: newStock },
       { new: true }
     );
+  }
+
+  async incrementSoldCount(id, quantity) {
+    return await Product.findByIdAndUpdate(
+      id,
+      { $inc: { soldCount: quantity } },
+      { new: true }
+    );
+  }
+
+  async getSuggestions(term, limit = 5) {
+    return await Product.find({
+      isActive: true,
+      name: { $regex: term, $options: 'i' }
+    })
+      .select('name images price')
+      .limit(limit);
   }
 }
 
