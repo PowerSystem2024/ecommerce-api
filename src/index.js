@@ -18,8 +18,25 @@ const PORT = process.env.PORT || 3001;
 connectDB();
 
 // Configuración de CORS
+const allowedOrigins = [
+  'https://ecommerce-front-venice.vercel.app',  // Tu frontend en producción
+  'https://ecommerce-front.vercel.app',         // Otra posible URL de producción
+  'http://localhost:5173'                       // Desarrollo local
+];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin 'origin' (como aplicaciones móviles o curl)
+    if (!origin) return callback(null, true);
+    
+    // Verificar si el origen está en la lista de permitidos
+    if (allowedOrigins.indexOf(origin) !== -1 || 
+        process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
   credentials: true, // Permite el envío de cookies/tokens
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
