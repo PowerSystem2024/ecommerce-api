@@ -48,13 +48,26 @@ app.options('*', cors(corsOptions)); // Manejar preflight para todas las rutas
 app.use(express.json()); // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded
 
+// Ruta raíz
 app.get('/', (req, res) => {
-  res.json({ message: 'API funcionando correctamente' });
+  res.json({
+    message: 'Bienvenido a la API de E-commerce',
+    documentation: '/api/docs',
+    status: 'operational',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Routes
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Montar todas las rutas bajo /api
 app.use('/api', routes);
+
+// Ruta de prueba
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API funcionando correctamente', timestamp: new Date().toISOString() });
+});
 
 // Error handler middleware
 app.use(errorHandler);
