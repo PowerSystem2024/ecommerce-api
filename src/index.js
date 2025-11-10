@@ -17,26 +17,24 @@ const PORT = process.env.PORT || 3001;
 // Conectar a la base de datos
 connectDB();
 
-// Configuración de CORS
-const allowedOrigins = [
-  'https://ecommerce-front-nine-nu.vercel.app',
-  'https://ecommerce-front-venice.vercel.app',
-  'https://ecommerce-front.vercel.app',
+const allowedOrigins = (
+  process.env.CORS_ALLOWED_ORIGINS ||
+  process.env.FRONTEND_URL ||
   'http://localhost:5173'
-];
+)
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
+// Configuración de CORS
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin 'origin' (como aplicaciones móviles o curl)
-    if (!origin) return callback(null, true);
-    
-    // Verificar si el origen está en la lista de permitidos
-    if (allowedOrigins.indexOf(origin) !== -1 || 
-        process.env.NODE_ENV === 'development') {
+  origin(requestOrigin, callback) {
+    if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
       callback(null, true);
-    } else {
-      callback(new Error('No permitido por CORS'));
+      return;
     }
+
+callback(new Error(`Origen no permitido por CORS: ${requestOrigin}`));
   },
   credentials: true, // Permite el envío de cookies/tokens
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -50,25 +48,8 @@ app.options('*', cors(corsOptions)); // Manejar preflight para todas las rutas
 app.use(express.json()); // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded
 
-// Ruta raíz
-app.get('/', (req, res) => {
-  res.json({
-    status: 'success',
-    message: 'Bienvenido a la API de E-commerce',
-    documentation: '/api/docs',
-    version: '1.0.0'
-  });
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
-});
-
-// Documentación de la API
+// Routes
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Rutas de la API
 app.use('/api', routes);
 
 // Error handler middleware
