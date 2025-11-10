@@ -48,6 +48,10 @@ app.options('*', cors(corsOptions)); // Manejar preflight para todas las rutas
 app.use(express.json()); // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded
 
+app.get('/', (req, res) => {
+  res.json({ message: 'API funcionando correctamente' });
+});
+
 // Routes
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', routes);
