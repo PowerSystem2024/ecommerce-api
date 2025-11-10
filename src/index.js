@@ -19,9 +19,10 @@ connectDB();
 
 // Configuración de CORS
 const allowedOrigins = [
-  'https://ecommerce-front-venice.vercel.app',  // Tu frontend en producción
-  'https://ecommerce-front.vercel.app',         // Otra posible URL de producción
-  'http://localhost:5173'                       // Desarrollo local
+  'https://ecommerce-front-nine-nu.vercel.app',
+  'https://ecommerce-front-venice.vercel.app',
+  'https://ecommerce-front.vercel.app',
+  'http://localhost:5173'
 ];
 
 const corsOptions = {
