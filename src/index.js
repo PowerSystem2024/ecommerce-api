@@ -17,24 +17,31 @@ const PORT = process.env.PORT || 3001;
 // Conectar a la base de datos
 connectDB();
 
-const allowedOrigins = (
-  process.env.CORS_ALLOWED_ORIGINS ||
-  process.env.FRONTEND_URL ||
-  'http://localhost:5173'
-)
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://ecommerce-front-nine-nu.vercel.app',
+  ...(process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()) : []),
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+].filter(Boolean);
+
+console.log('Orígenes permitidos:', allowedOrigins);
 
 // Configuración de CORS
 const corsOptions = {
-  origin(requestOrigin, callback) {
-    if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
-      callback(null, true);
-      return;
+  origin: (origin, callback) => {
+    // Permitir solicitudes sin origen (como aplicaciones móviles o curl)
+    if (!origin) return callback(null, true);
+    
+    // Verificar si el origen está en la lista de permitidos
+    if (allowedOrigins.includes(origin) || 
+        allowedOrigins.some(allowedOrigin => origin.startsWith(allowedOrigin))) {
+      return callback(null, true);
     }
-
-callback(new Error(`Origen no permitido por CORS: ${requestOrigin}`));
+    
+    console.log('Origen no permitido:', origin);
+    console.log('Orígenes permitidos:', allowedOrigins);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true, // Permite el envío de cookies/tokens
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
